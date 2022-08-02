@@ -25,7 +25,7 @@ int main()
 			->setCertFile("/etc/ssl/certs/ca-certificates.crt")
 			->build();
 	*/
-	HttpClient *httpClient = new HttpClientProxy();
+	std::unique_ptr<HttpClient> httpClient(new HttpClientProxy());
 	HttpResponse response;
 	httpClient->send(request, response);
 	std::cout << "Status Code: " << response.getStatusCode()
