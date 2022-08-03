@@ -9,13 +9,13 @@ class HttpRequest;
 
 class HttpResponse;
 
-/************************ HttpClient *************************/
+/************************ Common *************************/
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
-using SessionHandle = SOCKET;
+using SocketHandle = SOCKET;
 #define INVALID_HANDLE INVALID_SOCKET
 #elif defined(__linux__)
-using SessionHandle = int;
+using SocketHandle = int;
 #define INVALID_HANDLE (-1)
 #else
 #error Unsupported OS
@@ -61,7 +61,7 @@ public:
 	long sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
-	SessionHandle sessionHandle;
+	SocketHandle socketHandle;
 };
 
 /********************* HttpClientTlsImpl *********************/
