@@ -29,9 +29,14 @@ public:
 
 	friend class HttpClientBuilder;
 
-	virtual long send(HttpRequest &request, HttpResponse &response) = 0;
+	virtual size_t send(const HttpRequest &request, HttpResponse &response) = 0;
 
-	virtual long sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) = 0;
+	virtual size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) = 0;
+
+protected:
+	HttpVersion version = HttpVersion::HTTP_1_1;
+	Redirect redirect = Redirect::NORMAL;
+	std::string userAgent = "lwhttp/0.0.1";
 };
 
 /*********************** HttpClientProxy *********************/
@@ -40,9 +45,9 @@ class HttpClientProxy : public HttpClient
 public:
 	~HttpClientProxy() override;
 
-	long send(HttpRequest &request, HttpResponse &response) override;
+	size_t send(const HttpRequest &request, HttpResponse &response) override;
 
-	long sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
+	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
 	HttpClient *httpClient = nullptr;
@@ -56,9 +61,9 @@ public:
 
 	~HttpClientNonTlsImpl() override;
 
-	long send(HttpRequest &request, HttpResponse &response) override;
+	size_t send(const HttpRequest &request, HttpResponse &response) override;
 
-	long sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
+	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
 	SocketHandle socketHandle;
@@ -70,20 +75,38 @@ class HttpClientTlsImpl : public HttpClient
 public:
 	HttpClientTlsImpl();
 
-	~HttpClientTlsImpl() override = default;
+	~HttpClientTlsImpl() override;
 
-	long send(HttpRequest &request, HttpResponse &response) override;
+	size_t send(const HttpRequest &request, HttpResponse &response) override;
 
-	long sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
+	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
+	SocketHandle socketHandle;
 	TLSContext tlsContext;
 };
 
 /********************* HttpClientBuilder *********************/
 class HttpClientBuilder
 {
+	class Builder
+	{
+	public:
+		Builder &httpVersion(HttpVersion version);
+
+		//location: https://www.google.com/xxx/
+		Builder &redirect(Redirect redirect);
+
+		Builder &userAgent(const std::string &agent);
+
+		HttpClient *build();
+
+	private:
+		HttpClient *client = nullptr;
+	};
+
 public:
+	static Builder newBuilder();
 };
 
 #endif //LWHTTPD_HTTPCLIENT_H

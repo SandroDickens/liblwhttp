@@ -3,6 +3,10 @@ set(TARGET_NAME "http")
 file(GLOB LIB_SRC_FILES "*.cpp")
 add_library(${TARGET_NAME} SHARED ${LIB_SRC_FILES})
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_definitions(-D_DEBUG)
+endif ()
+
 if (CMAKE_HOST_WIN32)
     message("host is windows")
     # TLS

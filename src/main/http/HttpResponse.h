@@ -89,7 +89,10 @@ public:
 
 	[[nodiscard]] std::string getReason() const;
 
-	unsigned long build(const void *buffer, size_t len);
+	size_t build(const char *buffer, size_t len);
+
+private:
+	void fromString(const std::string &str);
 
 private:
 	HttpVersion version;
@@ -128,17 +131,9 @@ public:
 		return header.getField("Content-Type");
 	}
 
-	[[nodiscard]] unsigned long getContentLength() const
+	[[nodiscard]] unsigned long getBodyLength() const
 	{
-		auto contentLength = header.getField("Content-Length");
-		if (!contentLength.empty())
-		{
-			return stoul(contentLength);
-		}
-		else
-		{
-			return 0;
-		}
+		return bodyLength;
 	}
 
 	[[nodiscard]] HttpBody *getResponseBody() const
@@ -146,11 +141,14 @@ public:
 		return body;
 	}
 
-	unsigned long build(const void *buffer, size_t len);
+	size_t buildHeader(const char *buffer, size_t len);
+
+	void build(const char *buffer, size_t bodyLen);
 
 private:
 	StatusLine statusLine{};
 	HttpHeader header{};
+	size_t bodyLength = 0;
 	HttpBody *body = nullptr;
 };
 

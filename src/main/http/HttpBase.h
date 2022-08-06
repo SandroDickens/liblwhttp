@@ -19,6 +19,7 @@ public:
 
 enum class HttpVersion
 {
+	HTTP_1_0,
 	HTTP_1_1,
 	HTTP2
 };
