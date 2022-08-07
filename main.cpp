@@ -43,7 +43,7 @@ int main()
 	if (bodyLength > 0)
 	{
 		std::vector<char> body(bodyLength + 1);
-		memcpy(body.data(), response.getResponseBody()->getContent(), body.size());
+		memcpy(body.data(), response.getResponseBody()->getContent(), bodyLength);
 		body[bodyLength] = '\0';
 		std::string bodyStr(body.data());
 		std::cout << bodyStr;

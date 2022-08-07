@@ -13,7 +13,7 @@ void toUpCamelCase(std::string &str)
 	{
 		if (isFirstLetter)
 		{
-			ch = (char)std::toupper(ch);
+			ch = static_cast<char>(std::toupper(ch));
 		}
 		if (ch == ' ' || ch == '-')
 		{
@@ -30,7 +30,7 @@ void toUpCase(std::string &str)
 {
 	for (auto &ch: str)
 	{
-		ch = (char)std::toupper(ch);
+		ch = static_cast<char>(std::toupper(ch));
 	}
 }
 
@@ -38,7 +38,7 @@ void toLowCase(std::string &str)
 {
 	for (auto &ch: str)
 	{
-		ch = (char)std::tolower(ch);
+		ch = static_cast<char>(std::tolower(ch));
 	}
 }
 
