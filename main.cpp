@@ -29,8 +29,8 @@ int main()
 	/*
 	std::unique_ptr<HttpClient> httpClient(new HttpClientProxy());
 	 */
-	HttpClient *httpClient = HttpClientBuilder::newBuilder().redirect(
-			Redirect::NORMAL).userAgent("lwhttp/0.0.1").build();
+	std::shared_ptr<HttpClient> httpClient = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent(
+			"lwhttp/0.0.1").build();
 	HttpResponse response;
 	httpClient->send(request, response);
 	std::cout << "Status Code: " << response.getStatusCode()
