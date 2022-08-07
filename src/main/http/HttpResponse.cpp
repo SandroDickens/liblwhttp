@@ -170,6 +170,14 @@ void StatusLine::fromString(const std::string &str)
 }
 
 /************************ HttpResponse ***********************/
+HttpResponse::~HttpResponse()
+{
+	if (body != nullptr)
+	{
+		delete body;
+	}
+}
+
 HttpHeader HttpResponse::getHeader() const
 {
 	return this->header;

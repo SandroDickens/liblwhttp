@@ -104,6 +104,8 @@ private:
 class HttpResponse
 {
 public:
+	~HttpResponse();
+
 	[[nodiscard]] StatusLine getStatusLine() const
 	{
 		return statusLine;
