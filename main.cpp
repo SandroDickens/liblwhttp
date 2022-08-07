@@ -29,7 +29,7 @@ int main()
 	/*
 	std::unique_ptr<HttpClient> httpClient(new HttpClientProxy());
 	 */
-	HttpClient *httpClient = HttpClientBuilder::newBuilder().httpVersion(HttpVersion::HTTP_1_1).redirect(
+	HttpClient *httpClient = HttpClientBuilder::newBuilder().redirect(
 			Redirect::NORMAL).userAgent("lwhttp/0.0.1").build();
 	HttpResponse response;
 	httpClient->send(request, response);
@@ -42,10 +42,10 @@ int main()
 	auto bodyLength = response.getBodyLength();
 	if (bodyLength > 0)
 	{
-		char body[bodyLength + 1];
-		memcpy(body, response.getResponseBody()->getContent(), sizeof(body));
+		std::vector<char> body(bodyLength + 1);
+		memcpy(body.data(), response.getResponseBody()->getContent(), body.size());
 		body[bodyLength] = '\0';
-		std::string bodyStr(body);
+		std::string bodyStr(body.data());
 		std::cout << bodyStr;
 	}
 

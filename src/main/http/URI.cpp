@@ -1,5 +1,6 @@
 #include <regex>
 #include <iostream>
+#include <sstream>
 
 #include "URL.h"
 
@@ -23,12 +24,6 @@ URL::URL(const std::string &str)
 		portStr = matchResults[PORT_GRP];
 		pathStr = matchResults[PATH_GRP];
 		queryStr = matchResults[QUERY_GRP];
-		/*
-		for (unsigned int i = 1; i < matchResults.size(); ++i)
-		{
-			std::cout << "[" << i << "]: " << matchResults[i] << std::endl;
-		}
-		 */
 	}
 	else if (std::regex_match(str, matchResults, regexNoAuth))
 	{
@@ -38,12 +33,6 @@ URL::URL(const std::string &str)
 		portStr = matchResults[PORT_GRP];
 		pathStr = matchResults[PATH_GRP];
 		queryStr = matchResults[QUERY_GRP];
-		/*
-		for (unsigned int i = 1; i < matchResults.size(); ++i)
-		{
-			std::cout << "[" << i << "]: " << matchResults[i] << std::endl;
-		}
-		 */
 	}
 	else
 	{

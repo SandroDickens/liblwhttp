@@ -17,22 +17,20 @@ public:
 
 	~HttpRequest();
 
-	std::string getRequestLine() const;
+	[[nodiscard]] std::string getRequestLine() const;
 
-	HttpHeader getHeader() const;
+	[[nodiscard]] HttpHeader getHeader() const;
 
-	std::string getParameter(const std::string &name) const;
+	[[nodiscard]] std::string getParameter(const std::string &name) const;
 
-	std::unordered_map<std::string, std::string> getParameterMap() const;
+	[[nodiscard]] std::unordered_map<std::string, std::string> getParameterMap() const;
 
 	static HttpRequestBuilder *newBuilder();
 
 public:
 	URL uri;
 	HttpMethod method = HttpMethod::GET;
-	bool expectContinue{};
 	HttpVersion version = HttpVersion::HTTP_1_1;
-	unsigned long timestamp{};
 	HttpHeader header;
 	std::unordered_map<std::string, std::string> parameterMap;
 	HttpBody *body = nullptr;

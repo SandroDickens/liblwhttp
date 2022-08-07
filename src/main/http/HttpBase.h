@@ -15,6 +15,8 @@ public:
 	[[nodiscard]] virtual std::string toString() const = 0;
 
 	virtual void fromString(const std::string &str) = 0;
+
+	virtual ~HttpBase() = default;
 };
 
 enum class HttpVersion
@@ -48,9 +50,9 @@ class HttpHeader : public HttpBase
 public:
 	void fromString(const std::string &str) override;
 
-	std::string toString() const override;
+	[[nodiscard]] std::string toString() const override;
 
-	std::string getField(const std::string &name) const;
+	[[nodiscard]] std::string getField(const std::string &name) const;
 
 	void setField(const std::string &name, const std::string &value);
 
@@ -62,9 +64,11 @@ private:
 class HttpBody
 {
 public:
-	[[nodiscard]] virtual unsigned long getContentLength() const = 0;
+	[[nodiscard]] virtual size_t getBodyLength() const = 0;
 
-	[[nodiscard]] virtual const void *getContent() const = 0;
+	virtual void setBodyLength(size_t len) = 0;
+
+	[[nodiscard]] virtual const char *getContent() const = 0;
 
 	virtual ~HttpBody() = default;
 };
@@ -74,14 +78,14 @@ class HttpBodyImpl : public HttpBody
 {
 public:
 
-	HttpBodyImpl(const void *data, unsigned long len)
+	HttpBodyImpl(const char *data, unsigned long len)
 	{
 		contentPtr = nullptr;
-		contentLength = 0;
+		bodyLength = 0;
 		contentPtr = new char[len];
 		if (contentPtr != nullptr)
 		{
-			contentLength = len;
+			bodyLength = len;
 			memcpy(contentPtr, data, len);
 		}
 	}
@@ -90,9 +94,9 @@ public:
 	{
 		try
 		{
-			this->contentPtr = new unsigned char[other.contentLength];
-			this->contentLength = other.contentLength;
-			memcpy(this->contentPtr, other.contentPtr, contentLength);
+			this->contentPtr = new char[other.bodyLength];
+			this->bodyLength = other.bodyLength;
+			memcpy(this->contentPtr, other.contentPtr, bodyLength);
 		}
 		catch (std::bad_alloc &e)
 		{
@@ -107,9 +111,9 @@ public:
 		{
 			try
 			{
-				this->contentPtr = new unsigned char[other.contentLength];
-				this->contentLength = other.contentLength;
-				memcpy(this->contentPtr, other.contentPtr, contentLength);
+				this->contentPtr = new char[other.bodyLength];
+				this->bodyLength = other.bodyLength;
+				memcpy(this->contentPtr, other.contentPtr, bodyLength);
 			}
 			catch (std::bad_alloc &e)
 			{
@@ -122,9 +126,9 @@ public:
 
 	HttpBodyImpl(HttpBodyImpl &&other) noexcept
 	{
-		this->contentLength = other.contentLength;
+		this->bodyLength = other.bodyLength;
 		this->contentPtr = other.contentPtr;
-		other.contentLength = 0;
+		other.bodyLength = 0;
 		other.contentPtr = nullptr;
 	}
 
@@ -132,9 +136,9 @@ public:
 	{
 		if (this != &other)
 		{
-			this->contentLength = other.contentLength;
+			this->bodyLength = other.bodyLength;
 			this->contentPtr = other.contentPtr;
-			other.contentLength = 0;
+			other.bodyLength = 0;
 			other.contentPtr = nullptr;
 		}
 		return *this;
@@ -148,19 +152,24 @@ public:
 		}
 	}
 
-	[[nodiscard]] unsigned long getContentLength() const override
+	[[nodiscard]] size_t getBodyLength() const override
 	{
-		return contentLength;
+		return bodyLength;
 	}
 
-	[[nodiscard]] const void *getContent() const override
+	void setBodyLength(size_t len) override
+	{
+		bodyLength = len;
+	}
+
+	[[nodiscard]] const char *getContent() const override
 	{
 		return contentPtr;
 	}
 
 private:
-	unsigned long contentLength;
-	void *contentPtr = nullptr;
+	size_t bodyLength;
+	char *contentPtr = nullptr;
 };
 
 /************************** Cookie ***************************/

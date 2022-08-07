@@ -11,7 +11,9 @@ class HttpResponse;
 
 /************************ Common *************************/
 #if defined(_WIN32) || defined(_WIN64)
+
 #include <WinSock2.h>
+
 using SocketHandle = SOCKET;
 #define INVALID_HANDLE INVALID_SOCKET
 #elif defined(__linux__)
@@ -34,7 +36,6 @@ public:
 	virtual size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) = 0;
 
 protected:
-	HttpVersion version = HttpVersion::HTTP_1_1;
 	Redirect redirect = Redirect::NORMAL;
 	std::string userAgent = "lwhttp/0.0.1";
 };
@@ -47,7 +48,7 @@ public:
 
 	size_t send(const HttpRequest &request, HttpResponse &response) override;
 
-	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
+	size_t sendAsync(HttpRequest &httpRequest, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
 	HttpClient *httpClient = nullptr;
@@ -61,7 +62,7 @@ public:
 
 	~HttpClientNonTlsImpl() override;
 
-	size_t send(const HttpRequest &request, HttpResponse &response) override;
+	size_t send(const HttpRequest &httpRequest, HttpResponse &response) override;
 
 	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
@@ -77,7 +78,7 @@ public:
 
 	~HttpClientTlsImpl() override;
 
-	size_t send(const HttpRequest &request, HttpResponse &response) override;
+	size_t send(const HttpRequest &httpRequest, HttpResponse &response) override;
 
 	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
@@ -92,8 +93,6 @@ class HttpClientBuilder
 	class Builder
 	{
 	public:
-		Builder &httpVersion(HttpVersion version);
-
 		//location: https://www.google.com/xxx/
 		Builder &redirect(Redirect redirect);
 

@@ -2,7 +2,7 @@
 #include "utils.h"
 
 // Fills lps[] for given pattern pattern[0..patternLen-1]
-void computeLPSArray(const char *pattern, size_t patternLen, long *lps)
+void computeLPSArray(const char *pattern, size_t patternLen, std::vector<long> lps)
 {
 	// length of the previous longest prefix suffix
 	long len = 0;
@@ -41,14 +41,14 @@ std::vector<size_t> KMPSearch(const char *pattern, size_t patternLen, const char
 	std::vector<size_t> indexVec;
 
 	// create lps[] that will hold the longest prefix suffix values for pattern
-	long lps[patternLen];
+	std::vector<long> lps(patternLen);
 
 	// Preprocess the pattern (calculate lps[] array)
 	computeLPSArray(pattern, patternLen, lps);
 
 	size_t i = 0; // index for data[]
 	size_t j = 0; // index for pattern[]
-	size_t index = 0;
+	size_t index;
 	while ((dataLen - i) >= (patternLen - j))
 	{
 		if (pattern[j] == data[i])

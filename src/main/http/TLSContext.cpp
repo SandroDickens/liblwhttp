@@ -129,7 +129,7 @@ TLSContextBuilder *TLSContextBuilderImpl::setCiphers(const std::vector<std::stri
 {
 	assert(this->tlsContext.tlsConfig != nullptr);
 	std::string _ciphers;
-	for (const std::string &cipher:ciphers)
+	for (const std::string &cipher: ciphers)
 	{
 		_ciphers.append(":" + cipher);
 	}

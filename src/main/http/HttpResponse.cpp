@@ -86,10 +86,11 @@ size_t StatusLine::build(const char *buffer, size_t len)
 	if (resultPair.first)
 	{
 		size_t statusLen = resultPair.second + strlen(statusLinePattern);
-		char statusLineArray[statusLen + 1];
-		memcpy(statusLineArray, buffer, sizeof(statusLineArray));
-		statusLineArray[statusLen] = '\0';
-		std::string statusLine(statusLineArray);
+		//char statusLineArray[statusLen + 1];
+		std::vector<char> statusLineVec(statusLen + 1);
+		memcpy(statusLineVec.data(), buffer, statusLineVec.size());
+		statusLineVec[statusLen] = '\0';
+		std::string statusLine(statusLineVec.data());
 		try
 		{
 			fromString(statusLine);
@@ -105,7 +106,7 @@ size_t StatusLine::build(const char *buffer, size_t len)
 
 void StatusLine::fromString(const std::string &str)
 {
-	size_t begin = 0, end = 0;
+	size_t begin = 0, end;
 	end = str.find_first_of(' ');
 	if (end == std::string::npos)
 	{
@@ -217,5 +218,5 @@ void HttpResponse::build(const char *buffer, size_t bodyLen)
 //		assert(contentLen == bodyLen);
 //	}
 	this->body = new HttpBodyImpl(buffer, bodyLen);
-	this->bodyLength = bodyLen;
+	this->body->setBodyLength(bodyLen);
 }

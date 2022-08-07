@@ -131,9 +131,16 @@ public:
 		return header.getField("Content-Type");
 	}
 
-	[[nodiscard]] unsigned long getBodyLength() const
+	[[nodiscard]] size_t getBodyLength() const
 	{
-		return bodyLength;
+		if (body == nullptr)
+		{
+			return 0;
+		}
+		else
+		{
+			return body->getBodyLength();
+		}
 	}
 
 	[[nodiscard]] HttpBody *getResponseBody() const
@@ -148,7 +155,6 @@ public:
 private:
 	StatusLine statusLine{};
 	HttpHeader header{};
-	size_t bodyLength = 0;
 	HttpBody *body = nullptr;
 };
 

@@ -9,11 +9,11 @@ void toUpCamelCase(std::string &str)
 {
 	str[0] = static_cast<char>(std::toupper(static_cast<int>(str[0])));
 	bool isFirstLetter = false;
-	for (auto &ch:str)
+	for (auto &ch: str)
 	{
 		if (isFirstLetter)
 		{
-			ch = std::toupper(ch);
+			ch = (char)std::toupper(ch);
 		}
 		if (ch == ' ' || ch == '-')
 		{
@@ -28,17 +28,17 @@ void toUpCamelCase(std::string &str)
 
 void toUpCase(std::string &str)
 {
-	for (auto &ch:str)
+	for (auto &ch: str)
 	{
-		ch = std::toupper(ch);
+		ch = (char)std::toupper(ch);
 	}
 }
 
 void toLowCase(std::string &str)
 {
-	for (auto &ch:str)
+	for (auto &ch: str)
 	{
-		ch = std::tolower(ch);
+		ch = (char)std::tolower(ch);
 	}
 }
 
@@ -46,7 +46,7 @@ void toLowCase(std::string &str)
 std::string HttpHeader::toString() const
 {
 	std::string str;
-	for (const auto &field:fieldsMap)
+	for (const auto &field: fieldsMap)
 	{
 		std::string name = field.first;
 		toUpCamelCase(name);
@@ -77,17 +77,20 @@ void HttpHeader::fromString(const std::string &str)
 			throw std::invalid_argument(R"(The format of the field should be "name: value\r\n")");
 		}
 		name = field.substr(0, delimiter);
-		std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::tolower(c); });
+		std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c)
+		{ return std::tolower(c); });
 		value = field.substr(delimiter + 1);
 		value.erase(std::remove_if(value.begin(), value.end(), isspace), value.end());
 		fieldsMap.insert({name, value});
-	} while (std::string::npos != end);
+	}
+	while (std::string::npos != end);
 }
 
 std::string HttpHeader::getField(const std::string &name) const
 {
 	std::string _name = name;
-	std::transform(_name.begin(), _name.end(), _name.begin(), [](unsigned char c) { return std::tolower(c); });
+	std::transform(_name.begin(), _name.end(), _name.begin(), [](unsigned char c)
+	{ return std::tolower(c); });
 	if (fieldsMap.cend() != fieldsMap.find(_name))
 	{
 		return fieldsMap.at(_name);
@@ -101,7 +104,8 @@ std::string HttpHeader::getField(const std::string &name) const
 void HttpHeader::setField(const std::string &name, const std::string &value)
 {
 	std::string _name = name;
-	std::transform(_name.begin(), _name.end(), _name.begin(), [](unsigned char c) { return std::tolower(c); });
+	std::transform(_name.begin(), _name.end(), _name.begin(), [](unsigned char c)
+	{ return std::tolower(c); });
 	fieldsMap.insert_or_assign(_name, value);
 }
 
@@ -126,7 +130,7 @@ std::string Cookie::getCookie(const std::string &name)
 std::vector<std::pair<std::string, std::string>> Cookie::getCookies()
 {
 	std::vector<std::pair<std::string, std::string>> cookiesVec;
-	for (auto &cookie:cookiesMap)
+	for (auto &cookie: cookiesMap)
 	{
 		cookiesVec.emplace_back(cookie.first, cookie.second);
 	}
