@@ -78,7 +78,7 @@ class HttpBodyImpl : public HttpBody
 {
 public:
 
-	HttpBodyImpl(const char *data, unsigned long len)
+	HttpBodyImpl(const char *data, size_t len)
 	{
 		contentPtr = nullptr;
 		bodyLength = 0;
