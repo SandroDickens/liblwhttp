@@ -36,19 +36,7 @@ std::string HttpRequest::getRequestLine() const
 	{
 		ss << "?" << query;
 	}
-	switch (version)
-	{
-		case HttpVersion::HTTP_1_0:
-			ss << " HTTP/1.0";
-			break;
-		case HttpVersion::HTTP_1_1:
-			ss << " HTTP/1.1";
-			break;
-		case HttpVersion::HTTP2:
-			ss << " HTTP/2";
-			break;
-	}
-	ss << "\r\n";
+	ss << " " << HttpVersionSerialize(version) << "\r\n";
 	return ss.str();
 }
 

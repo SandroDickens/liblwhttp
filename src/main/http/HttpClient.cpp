@@ -236,7 +236,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 	else
 	{
 		std::vector<GenericAddr> serverAddrVec = getAddrByDomain(host);
-		for (const auto tmp: serverAddrVec)
+		for (const auto &tmp: serverAddrVec)
 		{
 			SocketHandle handle = INVALID_HANDLE;
 			if (tmp.family == AF_INET)
@@ -303,7 +303,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	std::string requestLine = httpRequest.getRequestLine();
 	HttpHeader header = httpRequest.getHeader();
 	header.setField("user-agent", this->userAgent);
-	std::string requestStr = requestLine + header.toString();
+	std::string requestStr = requestLine + header.serialize();
 	long sendLen = ::send(socketHandle, requestStr.c_str(), requestStr.length(), 0);
 	if (sendLen < 0)
 	{
@@ -365,7 +365,13 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 			auto _t_errno = errno;
 			if ((_t_errno != 0) && (_t_errno != EINTR))
 			{
-				printf("socket send error: %s(%d)\n", strerror(_t_errno), _t_errno);
+#ifdef _DEBUG
+#ifdef _WIN32
+				printf("%s, L%d, socket send error: %d\n", __func__, __LINE__, WSAGetLastError());
+#elif __linux__
+				printf("%s, L%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
+#endif
+#endif
 				break;
 			}
 		}
@@ -433,7 +439,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 	std::string requestLine = httpRequest.getRequestLine();
 	HttpHeader header = httpRequest.getHeader();
 	header.setField("user-agent", this->userAgent);
-	std::string requestStr = requestLine + header.toString();
+	std::string requestStr = requestLine + header.serialize();
 	ssize_t sendLen = tls_write(this->tlsContext.tlsCtx, requestStr.c_str(), requestStr.length());
 	if (sendLen < 0)
 	{

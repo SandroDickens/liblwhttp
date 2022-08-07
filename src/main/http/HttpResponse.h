@@ -75,10 +75,16 @@ enum class HttpStatus
 	NETWORK_AUTHENTICATION_REQUIRED = 511
 };
 
+std::string HttpStatusSerialize(HttpStatus status);
+
+HttpStatus HttpStatusDeserialize(const std::string &str);
+
 /************************* StatusLine ************************/
-class StatusLine
+class StatusLine : public Serializable
 {
 public:
+	[[nodiscard]] std::string serialize() const override;
+
 	[[nodiscard]] HttpVersion getVersion() const
 	{ return version; }
 
@@ -92,12 +98,11 @@ public:
 	size_t build(const char *buffer, size_t len);
 
 private:
-	void fromString(const std::string &str);
+	void deserialize(const std::string &str) override;
 
 private:
-	HttpVersion version;
-	HttpStatus status;
-	static std::unordered_map<HttpStatus, std::string> statusCodeMap;
+	HttpVersion version{};
+	HttpStatus status{};
 };
 
 /************************ HttpResponse ***********************/

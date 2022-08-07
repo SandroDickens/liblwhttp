@@ -3,8 +3,7 @@
 #include "HttpResponse.h"
 #include "utils.h"
 
-/************************* StatusLine ************************/
-std::unordered_map<HttpStatus, std::string> StatusLine::statusCodeMap = {
+std::unordered_map<HttpStatus, std::string> statusCodeMap = {
 		{HttpStatus::CONTINUE,                        "Continue"},
 		{HttpStatus::SWITCHING_PROTOCOLS,             "Switching Protocols"},
 		{HttpStatus::PROCESSING,                      "Processing"},
@@ -71,6 +70,26 @@ std::unordered_map<HttpStatus, std::string> StatusLine::statusCodeMap = {
 		{HttpStatus::NETWORK_AUTHENTICATION_REQUIRED, "Network Authentication Required"}
 };
 
+std::string HttpStatusSerialize(HttpStatus status)
+{
+	return statusCodeMap.at(status);
+}
+
+HttpStatus HttpStatusDeserialize(const std::string &str)
+{
+	HttpStatus status;
+	for (const auto &code: statusCodeMap)
+	{
+		if (code.second == str)
+		{
+			status = code.first;
+			break;
+		}
+	}
+	return status;
+}
+
+/************************* StatusLine ************************/
 std::string StatusLine::getReason() const
 {
 	return statusCodeMap[status];
@@ -93,7 +112,7 @@ size_t StatusLine::build(const char *buffer, size_t len)
 		std::string statusLine(statusLineVec.data());
 		try
 		{
-			fromString(statusLine);
+			deserialize(statusLine);
 			result = statusLen;
 		}
 		catch (std::exception &e)
@@ -104,7 +123,16 @@ size_t StatusLine::build(const char *buffer, size_t len)
 	return result;
 }
 
-void StatusLine::fromString(const std::string &str)
+std::string StatusLine::serialize() const
+{
+	std::stringstream ss;
+	ss << HttpVersionSerialize(this->version) << " " << HttpStatusSerialize(this->status) << " "
+	   << statusCodeMap[this->status]
+	   << "\r\n";
+	return ss.str();
+}
+
+void StatusLine::deserialize(const std::string &str)
 {
 	size_t begin = 0, end;
 	end = str.find_first_of(' ');
@@ -113,22 +141,7 @@ void StatusLine::fromString(const std::string &str)
 		throw std::invalid_argument("Bad HTTP status line format");
 	}
 	std::string versionStr = str.substr(begin, end - begin);
-	if (versionStr == "HTTP/1.1")
-	{
-		version = HttpVersion::HTTP_1_1;
-	}
-	else if (versionStr == "HTTP/2")
-	{
-		version = HttpVersion::HTTP2;
-	}
-	else if (versionStr == "HTTP/1.0")
-	{
-		version = HttpVersion::HTTP_1_0;
-	}
-	else
-	{
-		throw std::invalid_argument("Invalid HTTP version " + versionStr);
-	}
+	version = HttpVersionDeserialize(versionStr);
 
 	begin = str.find_first_not_of(' ', end);
 	if (end == std::string::npos)
@@ -183,7 +196,7 @@ HttpHeader HttpResponse::getHeader() const
 	return this->header;
 }
 
-static size_t getHttpHeader(const char *buffer, unsigned long len)
+static size_t getHttpHeader(const char *buffer, size_t len)
 {
 	size_t headLen = 0;
 	const char headerPattern[] = "\r\n\r\n";
@@ -204,7 +217,7 @@ size_t HttpResponse::buildHeader(const char *buffer, size_t len)
 		{
 			size_t statusLen = this->statusLine.build(buffer, headLen);
 			const std::string headStr(buffer + statusLen);
-			this->header.fromString(headStr);
+			this->header.deserialize(headStr);
 			return headLen;
 		}
 		catch (std::exception &e)

@@ -9,14 +9,14 @@
 #include <vector>
 
 
-class HttpBase
+class Serializable
 {
 public:
-	[[nodiscard]] virtual std::string toString() const = 0;
+	[[nodiscard]] virtual std::string serialize() const = 0;
 
-	virtual void fromString(const std::string &str) = 0;
+	virtual void deserialize(const std::string &str) = 0;
 
-	virtual ~HttpBase() = default;
+	virtual ~Serializable() = default;
 };
 
 enum class HttpVersion
@@ -25,6 +25,10 @@ enum class HttpVersion
 	HTTP_1_1,
 	HTTP2
 };
+
+std::string HttpVersionSerialize(HttpVersion version);
+
+HttpVersion HttpVersionDeserialize(const std::string &str);
 
 enum class Redirect
 {
@@ -45,12 +49,12 @@ enum class HttpMethod
 };
 
 /************************* HttpHeader ************************/
-class HttpHeader : public HttpBase
+class HttpHeader : public Serializable
 {
 public:
-	void fromString(const std::string &str) override;
+	[[nodiscard]] std::string serialize() const override;
 
-	[[nodiscard]] std::string toString() const override;
+	void deserialize(const std::string &str) override;
 
 	[[nodiscard]] std::string getField(const std::string &name) const;
 
@@ -173,9 +177,13 @@ private:
 };
 
 /************************** Cookie ***************************/
-class Cookie : public HttpBase
+class Cookie : public Serializable
 {
 public:
+	void deserialize(const std::string &str) override;
+
+	[[nodiscard]] std::string serialize() const override;
+
 	void setCookie(const std::string &name, std::string &value);
 
 	std::string getCookie(const std::string &name);
@@ -185,7 +193,7 @@ public:
 	bool hasCookie(const std::string &name);
 
 private:
-	std::unordered_map<std::string, std::string> cookiesMap;
+	std::unordered_map<std::string, std::string> cookies;
 };
 
 void toUpCase(std::string &str);

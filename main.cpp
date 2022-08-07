@@ -16,7 +16,7 @@ int main()
 
 	auto var = request.getRequestLine();
 	std::cout << "HTTP Request:\n" << var << std::endl;
-	var = request.header.toString();
+	var = request.header.serialize();
 	std::cout << var << std::endl;
 
 	std::shared_ptr<HttpClient> httpClient = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent(
@@ -28,7 +28,7 @@ int main()
 	          << "\nContentType: " << response.getContentType()
 	          << "\nBody Length: " << response.getBodyLength() << std::endl;
 	auto header = response.getHeader();
-	std::cout << "Header:\n" << header.toString() << std::endl;
+	std::cout << "Header:\n" << header.serialize() << std::endl;
 	auto bodyLength = response.getBodyLength();
 	if (bodyLength > 0)
 	{

@@ -108,3 +108,39 @@ std::vector<size_t> KMPSearchAllOf(const char *pattern, size_t patternLen, const
 {
 	return KMPSearch(pattern, patternLen, data, dataLen);
 }
+
+void ltrim(std::string &s)
+{
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch)
+	{ return !std::isspace(ch); }));
+}
+
+void ltrim(std::string &s, char ch)
+{
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [ch](unsigned char c)
+	{ return ch != c; }));
+}
+
+void rtrim(std::string &s)
+{
+	s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch)
+	{ return !std::isspace(ch); }).base(), s.end());
+}
+
+void rtrim(std::string &s, char ch)
+{
+	s.erase(std::find_if(s.rbegin(), s.rend(), [ch](unsigned char c)
+	{ return ch != c; }).base(), s.end());
+}
+
+void trim(std::string &s)
+{
+	ltrim(s);
+	rtrim(s);
+}
+
+void trim(std::string &s, char ch)
+{
+	ltrim(s, ch);
+	rtrim(s, ch);
+}

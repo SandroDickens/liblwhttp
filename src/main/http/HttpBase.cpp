@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "HttpBase.h"
+#include "utils.h"
 
 void toUpCamelCase(std::string &str)
 {
@@ -42,8 +43,48 @@ void toLowCase(std::string &str)
 	}
 }
 
+std::string HttpVersionSerialize(HttpVersion version)
+{
+	std::string s;
+	switch (version)
+	{
+		case HttpVersion::HTTP_1_0:
+			s = "HTTP/1.0";
+			break;
+		case HttpVersion::HTTP_1_1:
+			s = "HTTP/1.1";
+			break;
+		case HttpVersion::HTTP2:
+			s = "HTTP/2";
+			break;
+	}
+	return s;
+}
+/************************* HttpVersion ***********************/
+HttpVersion HttpVersionDeserialize(const std::string &str)
+{
+	HttpVersion version;
+	if (str == "HTTP/1.1")
+	{
+		version = HttpVersion::HTTP_1_1;
+	}
+	else if (str == "HTTP/2")
+	{
+		version = HttpVersion::HTTP2;
+	}
+	else if (str == "HTTP/1.0")
+	{
+		version = HttpVersion::HTTP_1_0;
+	}
+	else
+	{
+		throw std::invalid_argument("Invalid HTTP version " + str);
+	}
+	return version;
+}
+
 /************************* HttpHeader ************************/
-std::string HttpHeader::toString() const
+std::string HttpHeader::serialize() const
 {
 	std::string str;
 	for (const auto &field: fieldsMap)
@@ -55,7 +96,7 @@ std::string HttpHeader::toString() const
 	return str + "\r\n";
 }
 
-void HttpHeader::fromString(const std::string &str)
+void HttpHeader::deserialize(const std::string &str)
 {
 	std::string _str = str;
 	_str.erase(std::remove(_str.begin(), _str.end(), '\r'), _str.end());
@@ -110,16 +151,43 @@ void HttpHeader::setField(const std::string &name, const std::string &value)
 }
 
 /************************** Cookie ***************************/
+std::string Cookie::serialize() const
+{
+	std::stringstream ss;
+	ss << "Cookie:";
+	for (auto &cookie: cookies)
+	{
+		ss << " " << cookie.first << " = " << cookie.second << ";";
+	}
+	std::string s = ss.str();
+	rtrim(s, ';');
+	return s;
+}
+
+void Cookie::deserialize(const std::string &str)
+{
+	cookies.clear();
+	std::stringstream ss(str);
+	std::string cookie, name, value;
+	char eq;
+	ss >> cookie;
+	while (!ss.eof())
+	{
+		ss >> name >> eq >> value;
+		cookies.insert({name, value});
+	}
+}
+
 void Cookie::setCookie(const std::string &name, std::string &value)
 {
-	cookiesMap.insert_or_assign(name, value);
+	cookies.insert_or_assign(name, value);
 }
 
 std::string Cookie::getCookie(const std::string &name)
 {
-	if (cookiesMap.cend() != cookiesMap.find(name))
+	if (cookies.cend() != cookies.find(name))
 	{
-		return cookiesMap.at(name);
+		return cookies.at(name);
 	}
 	else
 	{
@@ -130,7 +198,7 @@ std::string Cookie::getCookie(const std::string &name)
 std::vector<std::pair<std::string, std::string>> Cookie::getCookies()
 {
 	std::vector<std::pair<std::string, std::string>> cookiesVec;
-	for (auto &cookie: cookiesMap)
+	for (auto &cookie: cookies)
 	{
 		cookiesVec.emplace_back(cookie.first, cookie.second);
 	}
@@ -139,5 +207,5 @@ std::vector<std::pair<std::string, std::string>> Cookie::getCookies()
 
 bool Cookie::hasCookie(const std::string &name)
 {
-	return cookiesMap.cend() != cookiesMap.find(name);
+	return cookies.cend() != cookies.find(name);
 }
