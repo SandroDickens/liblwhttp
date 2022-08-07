@@ -98,10 +98,11 @@ class HttpClientBuilder
 
 		Builder &userAgent(const std::string &agent);
 
-		HttpClient *build();
+		std::shared_ptr<HttpClient> build();
 
 	private:
-		HttpClient *client = nullptr;
+		std::shared_ptr<HttpClient> client;
+		//HttpClient *client = nullptr;
 	};
 
 public:

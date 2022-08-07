@@ -549,7 +549,7 @@ HttpClientBuilder::Builder &HttpClientBuilder::Builder::redirect(Redirect redire
 {
 	if (this->client == nullptr)
 	{
-		this->client = new HttpClientProxy();
+		this->client = std::make_shared<HttpClientProxy>();
 	}
 	this->client->redirect = redirect;
 	return *this;
@@ -559,13 +559,13 @@ HttpClientBuilder::Builder &HttpClientBuilder::Builder::userAgent(const std::str
 {
 	if (this->client == nullptr)
 	{
-		this->client = new HttpClientProxy();
+		this->client = std::make_shared<HttpClientProxy>();
 	}
 	this->client->userAgent = agent;
 	return *this;
 }
 
-HttpClient *HttpClientBuilder::Builder::build()
+std::shared_ptr<HttpClient> HttpClientBuilder::Builder::build()
 {
 	return this->client;
 }
