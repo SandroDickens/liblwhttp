@@ -148,7 +148,7 @@ public:
 	{
 		if (contentPtr != nullptr)
 		{
-			free(contentPtr);
+			delete[] contentPtr;
 		}
 	}
 
