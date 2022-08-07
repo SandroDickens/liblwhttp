@@ -4,7 +4,6 @@
 
 #include "http/HttpBase.h"
 #include "http/HttpRequest.h"
-#include "http/TLSContext.h"
 #include "http/HttpClient.h"
 #include "http/HttpResponse.h"
 
@@ -20,15 +19,7 @@ int main()
 	std::cout << "HTTP Request:\n" << var << std::endl;
 	var = request.header.toString();
 	std::cout << var << std::endl;
-	/*
-	std::unique_ptr<TLSContextBuilder> tlsContextBuilder(TLSContext::newClientBuilder());
-	const TLSContext &context = tlsContextBuilder->setProtocols(TLS_PROTOCOL_1_2)
-			->setCertFile("/etc/ssl/certs/ca-certificates.crt")
-			->build();
-	*/
-	/*
-	std::unique_ptr<HttpClient> httpClient(new HttpClientProxy());
-	 */
+
 	std::shared_ptr<HttpClient> httpClient = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent(
 			"lwhttp/0.0.1").build();
 	HttpResponse response;

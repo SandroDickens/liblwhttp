@@ -535,10 +535,11 @@ HttpClientTlsImpl::HttpClientTlsImpl()
 
 HttpClientTlsImpl::~HttpClientTlsImpl()
 {
+	/*
 	if (socketHandle != INVALID_HANDLE)
 	{
 		closeSocket(socketHandle);
-	}
+	}*/
 #ifdef _WIN32
 	WSACleanup();
 #endif
