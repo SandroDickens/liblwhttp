@@ -546,6 +546,12 @@ HttpClientTlsImpl::~HttpClientTlsImpl()
 }
 
 /********************* HttpClientBuilder *********************/
+HttpClientBuilder::Builder HttpClientBuilder::newBuilder()
+{
+	HttpClientBuilder::Builder builder{};
+	return builder;
+}
+
 HttpClientBuilder::Builder &HttpClientBuilder::Builder::redirect(Redirect redirect)
 {
 	if (this->client == nullptr)
@@ -569,10 +575,4 @@ HttpClientBuilder::Builder &HttpClientBuilder::Builder::userAgent(const std::str
 std::shared_ptr<HttpClient> HttpClientBuilder::Builder::build()
 {
 	return this->client;
-}
-
-HttpClientBuilder::Builder HttpClientBuilder::newBuilder()
-{
-	HttpClientBuilder::Builder builder{};
-	return builder;
 }

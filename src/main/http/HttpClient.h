@@ -102,7 +102,6 @@ class HttpClientBuilder
 
 	private:
 		std::shared_ptr<HttpClient> client;
-		//HttpClient *client = nullptr;
 	};
 
 public:

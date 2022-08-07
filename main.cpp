@@ -12,8 +12,7 @@ int main()
 {
 	URL url("https://www.google.com/");
 	//URL url("http://10.0.0.2/wiki/");
-	std::unique_ptr<HttpRequestBuilder> requestBuilder(HttpRequest::newBuilder());
-	HttpRequest request = requestBuilder->GET()->url(url)->build();
+	HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 
 	auto var = request.getRequestLine();
 	std::cout << "HTTP Request:\n" << var << std::endl;

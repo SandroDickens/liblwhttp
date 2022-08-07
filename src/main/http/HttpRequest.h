@@ -25,8 +25,6 @@ public:
 
 	[[nodiscard]] std::unordered_map<std::string, std::string> getParameterMap() const;
 
-	static HttpRequestBuilder *newBuilder();
-
 public:
 	URL uri;
 	HttpMethod method = HttpMethod::GET;
@@ -40,50 +38,37 @@ public:
 class HttpRequestBuilder
 {
 public:
-	virtual ~HttpRequestBuilder() = default;;
+	class Builder
+	{
+	public:
+		Builder() = default;
 
-	virtual HttpRequestBuilder *url(URL &url) = 0;
+		~Builder() = default;
 
-	virtual HttpRequestBuilder *header(HttpHeader &header) = 0;
+		Builder &url(URL &url);
 
-	virtual HttpRequestBuilder *method(HttpMethod &method) = 0;
+		Builder &header(HttpHeader &header);
 
-	virtual HttpRequestBuilder *GET() = 0;
+		Builder &method(HttpMethod &method);
 
-	virtual HttpRequestBuilder *POST(HttpBody *body) = 0;
+		Builder &GET();
 
-	virtual HttpRequestBuilder *PUT(HttpBody *body) = 0;
+		Builder &POST(HttpBody *body);
 
-	virtual HttpRequestBuilder *DELETE() = 0;
+		Builder &PUT(HttpBody *body);
 
-	virtual HttpRequestBuilder *version(HttpVersion version) = 0;
+		Builder &DELETE();
 
-	virtual HttpRequest build() = 0;
-};
+		Builder &version(HttpVersion version);
 
-class HttpRequestBuilderImpl : public HttpRequestBuilder
-{
+		HttpRequest build();
+
+	private:
+		HttpRequest httpRequest{};
+	};
+
 public:
-	HttpRequestBuilder *url(URL &url) override;
-
-	HttpRequestBuilder *header(HttpHeader &header) override;
-
-	HttpRequestBuilder *method(HttpMethod &method) override;
-
-	HttpRequestBuilder *GET() override;
-
-	HttpRequestBuilder *POST(HttpBody *body) override;
-
-	HttpRequestBuilder *PUT(HttpBody *body) override;
-
-	HttpRequestBuilder *DELETE() override;
-
-	HttpRequestBuilder *version(HttpVersion version) override;
-
-	HttpRequest build() override;
-
-private:
-	HttpRequest httpRequest{};
+	static Builder newBuilder();
 };
 
 #endif //LWHTTPD_HTTPREQUEST_H

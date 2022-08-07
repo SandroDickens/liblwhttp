@@ -74,13 +74,13 @@ std::unordered_map<std::string, std::string> HttpRequest::getParameterMap() cons
 	return parameterMap;
 }
 
-HttpRequestBuilder *HttpRequest::newBuilder()
+/********************* HttpRequestBuilder *********************/
+HttpRequestBuilder::Builder HttpRequestBuilder::newBuilder()
 {
-	return new HttpRequestBuilderImpl();
+	return HttpRequestBuilder::Builder{};
 }
 
-/********************* HttpRequestBuilder *********************/
-HttpRequestBuilder *HttpRequestBuilderImpl::url(URL &url)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::url(URL &url)
 {
 	std::string host = url.getHost();
 	if (url.getPort() != 0)
@@ -90,54 +90,54 @@ HttpRequestBuilder *HttpRequestBuilderImpl::url(URL &url)
 	}
 	this->httpRequest.header.setField("Host", host);
 	this->httpRequest.uri = url;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::header(HttpHeader &header)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::header(HttpHeader &header)
 {
 	this->httpRequest.header = header;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::method(HttpMethod &method)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::method(HttpMethod &method)
 {
 	this->httpRequest.method = method;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::GET()
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::GET()
 {
 	this->httpRequest.method = HttpMethod::GET;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::POST(HttpBody *body)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::POST(HttpBody *body)
 {
 	this->httpRequest.method = HttpMethod::POST;
 	this->httpRequest.body = body;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::PUT(HttpBody *body)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::PUT(HttpBody *body)
 {
 	this->httpRequest.method = HttpMethod::PUT;
 	this->httpRequest.body = body;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::DELETE()
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::DELETE()
 {
 	this->httpRequest.method = HttpMethod::DELETE;
-	return this;
+	return *this;
 }
 
-HttpRequestBuilder *HttpRequestBuilderImpl::version(HttpVersion version)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::version(HttpVersion version)
 {
 	this->httpRequest.version = version;
-	return this;
+	return *this;
 }
 
-HttpRequest HttpRequestBuilderImpl::build()
+HttpRequest HttpRequestBuilder::Builder::build()
 {
 	this->httpRequest.header.setField("User-Agent", "lwhttp/0.0.1");
 	this->httpRequest.header.setField("Accept", "*/*");
