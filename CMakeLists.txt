@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(lwhttp)
+project(demo)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -37,4 +37,4 @@ endif ()
 include_directories(src/main)
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME} http)
+target_link_libraries(${PROJECT_NAME} lwhttp)

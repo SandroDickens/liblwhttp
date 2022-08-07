@@ -26,7 +26,11 @@ int main()
 			->setCertFile("/etc/ssl/certs/ca-certificates.crt")
 			->build();
 	*/
+	/*
 	std::unique_ptr<HttpClient> httpClient(new HttpClientProxy());
+	 */
+	HttpClient *httpClient = HttpClientBuilder::newBuilder().httpVersion(HttpVersion::HTTP_1_1).redirect(
+			Redirect::NORMAL).userAgent("lwhttp/0.0.1").build();
 	HttpResponse response;
 	httpClient->send(request, response);
 	std::cout << "Status Code: " << response.getStatusCode()
@@ -45,7 +49,5 @@ int main()
 		std::cout << bodyStr;
 	}
 
-	HttpClient *client = HttpClientBuilder::newBuilder().httpVersion(HttpVersion::HTTP_1_1).redirect(
-			Redirect::NORMAL).userAgent("lwhttp/0.0.1").build();
 	return 0;
 }

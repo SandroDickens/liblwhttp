@@ -1,4 +1,4 @@
-set(TARGET_NAME "http")
+set(TARGET_NAME "lwhttp")
 
 file(GLOB LIB_SRC_FILES "*.cpp")
 add_library(${TARGET_NAME} SHARED ${LIB_SRC_FILES})
