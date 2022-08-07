@@ -6,10 +6,5 @@ include_directories(${MAIN_SRC_DIR})
 
 add_test(NAME httpTest COMMAND ${BIN_NAME} --exe $<TARGET_FILE:${BIN_NAME}>)
 
-#file(GLOB MAIN_SRC_FILES "${MAIN_SRC_DIR}/http/*.cpp")
-#message(STATUS "HttpTests.cpp srcs: ${MAIN_SRC_FILES}")
 add_executable(${BIN_NAME} HttpTests.cpp URLTests.cpp)
-if (CMAKE_HOST_UNIX)
-    target_link_libraries(${BIN_NAME} pthread)
-endif ()
 target_link_libraries(${BIN_NAME} lwhttp)
