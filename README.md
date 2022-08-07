@@ -44,7 +44,7 @@ std::cout << "Status Code: " << response.getStatusCode()
           << "\nContentType: " << response.getContentType()
           << "\nBody Length: " << response.getBodyLength() << std::endl;
 auto header = response.getHeader();
-std::cout << "Header:\n" << header.toString() << std::endl;
+std::cout << "Header:\n" << header.serialize() << std::endl;
 auto bodyLength = response.getBodyLength();
 if (bodyLength > 0)
 {

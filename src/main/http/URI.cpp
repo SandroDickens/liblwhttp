@@ -4,6 +4,11 @@
 
 #include "URL.h"
 
+URL::URL()
+{
+	this->initialize();
+}
+
 URL::URL(const std::string &str)
 {
 	this->initialize();
@@ -87,7 +92,7 @@ URL::URL(const std::string &str)
 	}
 }
 
-std::string URL::toString() const
+std::string URL::serialize() const
 {
 	std::stringstream ss;
 	switch (scheme)

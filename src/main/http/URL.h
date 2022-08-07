@@ -13,13 +13,11 @@ enum class Scheme
 class URL
 {
 public:
-	URL() = default;
+	URL();
 
 	explicit URL(const std::string &str);
 
-	[[nodiscard]] std::string toString() const;
-
-	void initialize();
+	[[nodiscard]] std::string serialize() const;
 
 	[[nodiscard]] Scheme getScheme() const
 	{
@@ -50,6 +48,9 @@ public:
 	{
 		return query;
 	}
+
+private:
+	void initialize();
 
 private:
 	Scheme scheme = Scheme::Null;
