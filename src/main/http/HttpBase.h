@@ -1,5 +1,5 @@
-#ifndef LWHTTPD_HTTPBASE_H
-#define LWHTTPD_HTTPBASE_H
+#ifndef LWHTTP_HTTPBASE_H
+#define LWHTTP_HTTPBASE_H
 
 #include <cstring>
 #include <iostream>
@@ -176,30 +176,10 @@ private:
 	char *contentPtr = nullptr;
 };
 
-/************************** Cookie ***************************/
-class Cookie : public Serializable
-{
-public:
-	void deserialize(const std::string &str) override;
-
-	[[nodiscard]] std::string serialize() const override;
-
-	void setCookie(const std::string &name, std::string &value);
-
-	std::string getCookie(const std::string &name);
-
-	std::vector<std::pair<std::string, std::string>> getCookies();
-
-	bool hasCookie(const std::string &name);
-
-private:
-	std::unordered_map<std::string, std::string> cookies;
-};
-
 void toUpCase(std::string &str);
 
 void toLowCase(std::string &str);
 
 void toUpCamelCase(std::string &str);
 
-#endif //LWHTTPD_HTTPBASE_H
+#endif //LWHTTP_HTTPBASE_H

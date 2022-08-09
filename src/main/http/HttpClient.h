@@ -1,7 +1,8 @@
-#ifndef LWHTTPD_HTTPCLIENT_H
-#define LWHTTPD_HTTPCLIENT_H
+#ifndef LWHTTP_HTTPCLIENT_H
+#define LWHTTP_HTTPCLIENT_H
 
 #include <functional>
+#include <mutex>
 
 #include "TLSContext.h"
 
@@ -27,6 +28,8 @@ using SocketHandle = int;
 class HttpClient
 {
 public:
+	HttpClient();
+
 	virtual ~HttpClient() = default;
 
 	friend class HttpClientBuilder;
@@ -36,22 +39,22 @@ public:
 	virtual size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) = 0;
 
 protected:
-	Redirect redirect = Redirect::NORMAL;
-	std::string userAgent = "lwhttp/0.0.1";
+	Redirect redirect;
+	std::string userAgent;
 };
 
 /*********************** HttpClientProxy *********************/
 class HttpClientProxy : public HttpClient
 {
 public:
-	~HttpClientProxy() override;
-
 	size_t send(const HttpRequest &request, HttpResponse &response) override;
 
 	size_t sendAsync(HttpRequest &httpRequest, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
-	HttpClient *httpClient = nullptr;
+	static std::shared_ptr<HttpClient> httpClient;
+	static std::shared_ptr<HttpClient> httpsClient;
+	static std::mutex clientMutex;
 };
 
 /******************* HttpClientNonTlsImpl ********************/
@@ -108,4 +111,4 @@ public:
 	static Builder newBuilder();
 };
 
-#endif //LWHTTPD_HTTPCLIENT_H
+#endif //LWHTTP_HTTPCLIENT_H

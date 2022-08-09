@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include "utils.h"
 
 // Fills lps[] for given pattern pattern[0..patternLen-1]

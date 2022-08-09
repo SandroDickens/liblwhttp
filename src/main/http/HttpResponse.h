@@ -1,5 +1,5 @@
-#ifndef LWHTTPD_HTTPRESPONSE_H
-#define LWHTTPD_HTTPRESPONSE_H
+#ifndef LWHTTP_HTTPRESPONSE_H
+#define LWHTTP_HTTPRESPONSE_H
 
 #include <iostream>
 #include <unordered_map>
@@ -165,4 +165,4 @@ private:
 	HttpBody *body = nullptr;
 };
 
-#endif //LWHTTPD_HTTPRESPONSE_H
+#endif //LWHTTP_HTTPRESPONSE_H

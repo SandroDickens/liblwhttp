@@ -1,7 +1,8 @@
-#ifndef LWHTTPD_HTTPREQUEST_H
-#define LWHTTPD_HTTPREQUEST_H
+#ifndef LWHTTP_HTTPREQUEST_H
+#define LWHTTP_HTTPREQUEST_H
 
 #include <string>
+#include <memory>
 #include "URL.h"
 #include "HttpBase.h"
 
@@ -31,7 +32,7 @@ public:
 	HttpVersion version = HttpVersion::HTTP_1_1;
 	HttpHeader header;
 	std::unordered_map<std::string, std::string> parameterMap;
-	HttpBody *body = nullptr;
+	std::shared_ptr<HttpBody> body;
 };
 
 /********************* HttpRequestBuilder *********************/
@@ -53,9 +54,9 @@ public:
 
 		Builder &GET();
 
-		Builder &POST(HttpBody *body);
+		Builder &POST(std::shared_ptr<HttpBody> body);
 
-		Builder &PUT(HttpBody *body);
+		Builder &PUT(std::shared_ptr<HttpBody> body);
 
 		Builder &DELETE();
 
@@ -71,4 +72,4 @@ public:
 	static Builder newBuilder();
 };
 
-#endif //LWHTTPD_HTTPREQUEST_H
+#endif //LWHTTP_HTTPREQUEST_H

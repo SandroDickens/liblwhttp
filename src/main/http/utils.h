@@ -1,5 +1,5 @@
-#ifndef LWHTTPD_UTILS_H
-#define LWHTTPD_UTILS_H
+#ifndef LWHTTP_UTILS_H
+#define LWHTTP_UTILS_H
 
 #include <cstddef>
 #include <string>
@@ -22,4 +22,4 @@ void trim(std::string &s);
 
 void trim(std::string &s, char ch);
 
-#endif //LWHTTPD_UTILS_H
+#endif //LWHTTP_UTILS_H

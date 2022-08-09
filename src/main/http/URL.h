@@ -1,5 +1,5 @@
-#ifndef LWHTTPD_URI_H
-#define LWHTTPD_URI_H
+#ifndef LWHTTP_URI_H
+#define LWHTTP_URI_H
 
 #include <string>
 
@@ -61,4 +61,4 @@ private:
 	std::string query;
 };
 
-#endif //LWHTTPD_URI_H
+#endif //LWHTTP_URI_H

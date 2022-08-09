@@ -1,5 +1,5 @@
-#ifndef LWHTTPD_TLSCONTEXT_H
-#define LWHTTPD_TLSCONTEXT_H
+#ifndef LWHTTP_TLSCONTEXT_H
+#define LWHTTP_TLSCONTEXT_H
 
 #include <string>
 
@@ -15,8 +15,6 @@ struct tls_config;
 #define    TLS_PROTOCOL_SAFE (TLS_PROTOCOL_1_2|TLS_PROTOCOL_1_3)
 
 /************************ TLSContext *************************/
-class TLSContextBuilder;
-
 class TLSContext
 {
 public:
@@ -36,10 +34,6 @@ public:
 
 	[[nodiscard]] std::vector<std::string> getCiphers() const;
 
-	static TLSContextBuilder *newServerBuilder();
-
-	static TLSContextBuilder *newClientBuilder();
-
 public:
 	tls *tlsCtx = nullptr;
 	tls_config *tlsConfig = nullptr;
@@ -51,42 +45,29 @@ public:
 class TLSContextBuilder
 {
 public:
-	virtual TLSContextBuilder *newServerBuilder() = 0;
+	class Builder
+	{
+	public:
+		Builder &newServerBuilder();
 
-	virtual TLSContextBuilder *newClientBuilder() = 0;
+		Builder &newClientBuilder();
 
-	virtual TLSContextBuilder *setProtocols(unsigned int protocols) = 0;
+		Builder &setProtocols(unsigned int protocols);
 
-	virtual TLSContextBuilder *setCiphers(const std::vector<std::string> &ciphers) = 0;
+		Builder &setCiphers(const std::vector<std::string> &ciphers);
 
-	virtual TLSContextBuilder *setKeyFile(const std::string &keyFile) = 0;
+		Builder &setKeyFile(const std::string &keyFile);
 
-	virtual TLSContextBuilder *setCertFile(const std::string &certFile) = 0;
+		Builder &setCertFile(const std::string &certFile);
 
-	virtual TLSContext &&build() = 0;
+		TLSContext build();
 
-	virtual ~TLSContextBuilder() = default;
-};
+	private:
+		TLSContext tlsContext{};
+	};
 
-class TLSContextBuilderImpl : public TLSContextBuilder
-{
 public:
-	TLSContextBuilder *newServerBuilder() override;
-
-	TLSContextBuilder *newClientBuilder() override;
-
-	TLSContextBuilder *setProtocols(unsigned int protocols) override;
-
-	TLSContextBuilder *setCiphers(const std::vector<std::string> &ciphers) override;
-
-	TLSContextBuilder *setKeyFile(const std::string &keyFile) override;
-
-	TLSContextBuilder *setCertFile(const std::string &certFile) override;
-
-	TLSContext &&build() override;
-
-private:
-	TLSContext tlsContext{};
+	static Builder newBuilder();
 };
 
-#endif //LWHTTPD_TLSCONTEXT_H
+#endif //LWHTTP_TLSCONTEXT_H

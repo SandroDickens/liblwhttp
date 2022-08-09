@@ -57,7 +57,7 @@ struct GenericAddr
 	{
 		in_addr addr4;
 		in6_addr addr6;
-	} addr;
+	}addr;
 };
 
 std::vector<GenericAddr> getAddrByDomain(const std::string &hostName)
@@ -116,11 +116,11 @@ void setSocketNonBlock(SocketHandle socketHandle)
 	int flags = fcntl(socketHandle, F_GETFL, 0);
 	if (-1 != flags)
 	{
-		if (-1 == fcntl(socketHandle, F_SETFL, flags|O_NONBLOCK))
+		if (-1 == fcntl(socketHandle, F_SETFL, flags | O_NONBLOCK))
 		{
 #ifdef _DEBUG
 			printf("%s,L%d,set socket flags to non-blocking failed: %s(%d)\n", __func__, __LINE__, strerror(errno),
-				   errno);
+			       errno);
 #endif
 		}
 	}
@@ -236,7 +236,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 	else
 	{
 		std::vector<GenericAddr> serverAddrVec = getAddrByDomain(host);
-		for (const auto &tmp: serverAddrVec)
+		for (const auto &tmp:serverAddrVec)
 		{
 			SocketHandle handle = INVALID_HANDLE;
 			if (tmp.family == AF_INET)
@@ -259,27 +259,48 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 }
 
 /************************ HttpClient *************************/
+HttpClient::HttpClient()
+{
+	redirect = Redirect::NORMAL;
+	userAgent = "lwhttp/0.0.1";
+}
 
 /*********************** HttpClientProxy *********************/
-HttpClientProxy::~HttpClientProxy()
-{
-	if (this->httpClient != nullptr)
-	{
-		delete this->httpClient;
-	}
-}
+std::mutex HttpClientProxy::clientMutex;
+std::shared_ptr<HttpClient> HttpClientProxy::httpClient = nullptr;
+std::shared_ptr<HttpClient> HttpClientProxy::httpsClient = nullptr;
 
 size_t HttpClientProxy::send(const HttpRequest &request, HttpResponse &response)
 {
+	HttpClient *client;
 	if (request.uri.getScheme() == Scheme::Https)
 	{
-		this->httpClient = new HttpClientTlsImpl();
+		if (HttpClientProxy::httpsClient == nullptr)
+		{
+			clientMutex.lock();
+			if (HttpClientProxy::httpsClient == nullptr)
+			{
+				HttpClientProxy::httpsClient = std::make_shared<HttpClientTlsImpl>();
+			}
+			clientMutex.unlock();
+		}
+		client = HttpClientProxy::httpsClient.get();
 	}
 	else
 	{
-		this->httpClient = new HttpClientNonTlsImpl();
+		if (HttpClientProxy::httpClient == nullptr)
+		{
+			clientMutex.lock();
+			if (HttpClientProxy::httpClient == nullptr)
+			{
+				HttpClientProxy::httpClient = std::make_shared<HttpClientNonTlsImpl>();
+			}
+			clientMutex.unlock();
+		}
+		client = HttpClientProxy::httpClient.get();
 	}
-	return this->httpClient->send(request, response);
+
+	return client->send(request, response);
 }
 
 size_t HttpClientProxy::sendAsync(HttpRequest &httpRequest, std::function<HttpResponse> &responseBodyHandler)
@@ -451,6 +472,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		tls_write(this->tlsContext.tlsCtx, httpRequest.body->getContent(), httpRequest.body->getBodyLength());
 	}
 	char buffer[BUFFER_SIZE];
+	memset(buffer, 0, sizeof(buffer));
 	size_t headLen = 0;
 	size_t dataLen = 0;
 	bool isChunked = false;
@@ -535,8 +557,7 @@ HttpClientTlsImpl::HttpClientTlsImpl()
 	}
 #endif
 	socketHandle = INVALID_HANDLE;
-	std::unique_ptr<TLSContextBuilder> tlsContextBuilder(TLSContext::newClientBuilder());
-	this->tlsContext = tlsContextBuilder->setProtocols(TLS_PROTOCOL_SAFE)->build();
+	this->tlsContext = TLSContextBuilder::newBuilder().newClientBuilder().setProtocols(TLS_PROTOCOL_SAFE).build();
 }
 
 HttpClientTlsImpl::~HttpClientTlsImpl()

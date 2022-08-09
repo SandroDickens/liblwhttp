@@ -60,18 +60,8 @@ std::vector<std::string> TLSContext::getCiphers() const
 	return this->ciphers;
 }
 
-TLSContextBuilder *TLSContext::newServerBuilder()
-{
-	return (new TLSContextBuilderImpl())->newServerBuilder();
-}
-
-TLSContextBuilder *TLSContext::newClientBuilder()
-{
-	return (new TLSContextBuilderImpl())->newClientBuilder();
-}
-
 /********************* TLSContextBuilder *********************/
-TLSContextBuilder *TLSContextBuilderImpl::newServerBuilder()
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::newServerBuilder()
 {
 	if (-1 == tls_init())
 	{
@@ -89,10 +79,10 @@ TLSContextBuilder *TLSContextBuilderImpl::newServerBuilder()
 		tlsContext.tlsCtx = nullptr;
 		throw std::runtime_error("TLS config create failed!");
 	}
-	return this;
+	return *this;
 }
 
-TLSContextBuilder *TLSContextBuilderImpl::newClientBuilder()
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::newClientBuilder()
 {
 	if (-1 == tls_init())
 	{
@@ -110,10 +100,10 @@ TLSContextBuilder *TLSContextBuilderImpl::newClientBuilder()
 		tlsContext.tlsCtx = nullptr;
 		throw std::runtime_error("TLS config create failed!");
 	}
-	return this;
+	return *this;
 }
 
-TLSContextBuilder *TLSContextBuilderImpl::setProtocols(unsigned int protocols)
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::setProtocols(unsigned int protocols)
 {
 	assert(this->tlsContext.tlsConfig != nullptr);
 	if (-1 == tls_config_set_protocols(tlsContext.tlsConfig, protocols))
@@ -122,14 +112,14 @@ TLSContextBuilder *TLSContextBuilderImpl::setProtocols(unsigned int protocols)
 		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
 	}
 	this->tlsContext.protocols = protocols;
-	return this;
+	return *this;
 }
 
-TLSContextBuilder *TLSContextBuilderImpl::setCiphers(const std::vector<std::string> &ciphers)
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::setCiphers(const std::vector<std::string> &ciphers)
 {
 	assert(this->tlsContext.tlsConfig != nullptr);
 	std::string _ciphers;
-	for (const std::string &cipher: ciphers)
+	for (const std::string &cipher:ciphers)
 	{
 		_ciphers.append(":" + cipher);
 	}
@@ -140,10 +130,10 @@ TLSContextBuilder *TLSContextBuilderImpl::setCiphers(const std::vector<std::stri
 		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
 	}
 	this->tlsContext.ciphers = ciphers;
-	return this;
+	return *this;
 }
 
-TLSContextBuilder *TLSContextBuilderImpl::setKeyFile(const std::string &keyFile)
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::setKeyFile(const std::string &keyFile)
 {
 	assert(this->tlsContext.tlsConfig != nullptr);
 	if (-1 == tls_config_set_key_file(tlsContext.tlsConfig, keyFile.c_str()))
@@ -151,10 +141,10 @@ TLSContextBuilder *TLSContextBuilderImpl::setKeyFile(const std::string &keyFile)
 		std::string exceptWhat("TLS set key file error!");
 		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
 	}
-	return this;
+	return *this;
 }
 
-TLSContextBuilder *TLSContextBuilderImpl::setCertFile(const std::string &certFile)
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::setCertFile(const std::string &certFile)
 {
 	assert(this->tlsContext.tlsConfig != nullptr);
 	if (-1 == tls_config_set_cert_file(tlsContext.tlsConfig, certFile.c_str()))
@@ -162,11 +152,16 @@ TLSContextBuilder *TLSContextBuilderImpl::setCertFile(const std::string &certFil
 		std::string exceptWhat("TLS set key file error!");
 		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
 	}
-	return this;
+	return *this;
 }
 
-TLSContext &&TLSContextBuilderImpl::build()
+TLSContext TLSContextBuilder::Builder::build()
 {
 	assert(this->tlsContext.tlsConfig != nullptr);
 	return std::move(this->tlsContext);
+}
+
+TLSContextBuilder::Builder TLSContextBuilder::newBuilder()
+{
+	return TLSContextBuilder::Builder{};
 }

@@ -1,4 +1,5 @@
 #include <sstream>
+#include <utility>
 #include "HttpBase.h"
 #include "HttpRequest.h"
 
@@ -6,10 +7,6 @@
 HttpRequest::~HttpRequest()
 {
 	parameterMap.clear();
-	if (body != nullptr) /* NOLINT */
-	{
-		delete body;
-	}
 }
 
 std::string HttpRequest::getRequestLine() const
@@ -99,17 +96,17 @@ HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::GET()
 	return *this;
 }
 
-HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::POST(HttpBody *body)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::POST(std::shared_ptr<HttpBody> body)
 {
 	this->httpRequest.method = HttpMethod::POST;
-	this->httpRequest.body = body;
+	this->httpRequest.body = std::move(body);
 	return *this;
 }
 
-HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::PUT(HttpBody *body)
+HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::PUT(std::shared_ptr<HttpBody> body)
 {
 	this->httpRequest.method = HttpMethod::PUT;
-	this->httpRequest.body = body;
+	this->httpRequest.body = std::move(body);
 	return *this;
 }
 
