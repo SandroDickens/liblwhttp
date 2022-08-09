@@ -57,7 +57,7 @@ struct GenericAddr
 	{
 		in_addr addr4;
 		in6_addr addr6;
-	}addr;
+	} addr;
 };
 
 std::vector<GenericAddr> getAddrByDomain(const std::string &hostName)
@@ -120,7 +120,7 @@ void setSocketNonBlock(SocketHandle socketHandle)
 		{
 #ifdef _DEBUG
 			printf("%s,L%d,set socket flags to non-blocking failed: %s(%d)\n", __func__, __LINE__, strerror(errno),
-			       errno);
+				   errno);
 #endif
 		}
 	}
@@ -236,7 +236,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 	else
 	{
 		std::vector<GenericAddr> serverAddrVec = getAddrByDomain(host);
-		for (const auto &tmp:serverAddrVec)
+		for (const auto &tmp: serverAddrVec)
 		{
 			SocketHandle handle = INVALID_HANDLE;
 			if (tmp.family == AF_INET)
@@ -328,11 +328,28 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	long sendLen = ::send(socketHandle, requestStr.c_str(), requestStr.length(), 0);
 	if (sendLen < 0)
 	{
+#ifdef _DEBUG
+#ifdef _WIN32
+		printf("%s:%d send request header failed:: %d\n", __func__, __LINE__, WSAGetLastError());
+#elif __linux__
+		printf("%s:%d send request header failed:: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
+#endif
+#endif
 		return -1;
 	}
 	if ((httpRequest.body != nullptr) && (httpRequest.body->getBodyLength() > 0))
 	{
-		::send(this->socketHandle, httpRequest.body->getContent(), httpRequest.body->getBodyLength(), 0);
+		sendLen = ::send(this->socketHandle, httpRequest.body->getContent(), httpRequest.body->getBodyLength(), 0);
+		if (sendLen < 0)
+		{
+#ifdef _DEBUG
+#ifdef _WIN32
+			printf("%s:%d send request body failed:: %d\n", __func__, __LINE__, WSAGetLastError());
+#elif __linux__
+			printf("%s:%d send request body failed:: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
+#endif
+#endif
+		}
 	}
 	char buffer[BUFFER_SIZE];
 	size_t headLen = 0;
@@ -388,9 +405,9 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 			{
 #ifdef _DEBUG
 #ifdef _WIN32
-				printf("%s, L%d, socket send error: %d\n", __func__, __LINE__, WSAGetLastError());
+				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, WSAGetLastError());
 #elif __linux__
-				printf("%s, L%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
+				printf("%s:%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
 #endif
 #endif
 				break;
@@ -455,6 +472,9 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 
 	if (-1 == tls_connect_socket(this->tlsContext.tlsCtx, this->socketHandle, host.c_str()))
 	{
+#ifdef _DEBUG
+		printf("%s:%d tls connect to server failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
+#endif
 		return -1;
 	}
 	std::string requestLine = httpRequest.getRequestLine();
@@ -464,12 +484,21 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 	ssize_t sendLen = tls_write(this->tlsContext.tlsCtx, requestStr.c_str(), requestStr.length());
 	if (sendLen < 0)
 	{
-		tls_close(this->tlsContext.tlsCtx);
+#ifdef _DEBUG
+		printf("%s:%d send request header failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
+#endif
 		return -1;
 	}
 	if ((httpRequest.body != nullptr) && (httpRequest.body->getBodyLength() > 0))
 	{
-		tls_write(this->tlsContext.tlsCtx, httpRequest.body->getContent(), httpRequest.body->getBodyLength());
+		sendLen = tls_write(this->tlsContext.tlsCtx, httpRequest.body->getContent(), httpRequest.body->getBodyLength());
+		if (sendLen < 0)
+		{
+#ifdef _DEBUG
+			printf("%s:%d send request body failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
+#endif
+			return -1;
+		}
 	}
 	char buffer[BUFFER_SIZE];
 	memset(buffer, 0, sizeof(buffer));
