@@ -1,7 +1,8 @@
 #include <cassert>
 #include <stdexcept>
-#include <tls.h>
 #include <vector>
+
+#include <openssl/ssl.h>
 
 #include "TLSContext.h"
 
@@ -10,12 +11,12 @@ TLSContext::TLSContext(TLSContext &&other) noexcept
 {
 	if (this != &other)
 	{
-		this->tlsCtx = other.tlsCtx;
-		other.tlsCtx = nullptr;
-		this->tlsConfig = other.tlsConfig;
-		other.tlsConfig = nullptr;
-		this->protocols = other.protocols;
-		other.protocols = 0;
+		this->sslCtx = other.sslCtx;
+		other.sslCtx = nullptr;
+		this->ssl = other.ssl;
+		other.ssl = nullptr;
+		this->version = other.version;
+		other.version = 0;
 		this->ciphers = std::move(other.ciphers);
 	}
 }
@@ -24,12 +25,12 @@ TLSContext &TLSContext::operator=(TLSContext &&other) noexcept
 {
 	if (this != &other)
 	{
-		this->tlsCtx = other.tlsCtx;
-		other.tlsCtx = nullptr;
-		this->tlsConfig = other.tlsConfig;
-		other.tlsConfig = nullptr;
-		this->protocols = other.protocols;
-		other.protocols = 0;
+		this->sslCtx = other.sslCtx;
+		other.sslCtx = nullptr;
+		this->ssl = other.ssl;
+		other.ssl = nullptr;
+		this->version = other.version;
+		other.version = 0;
 		this->ciphers = std::move(other.ciphers);
 	}
 	return *this;
@@ -37,22 +38,21 @@ TLSContext &TLSContext::operator=(TLSContext &&other) noexcept
 
 TLSContext::~TLSContext()
 {
-	if (tlsCtx != nullptr)
+	if (ssl != nullptr)
 	{
-		tls_close(tlsCtx);
-		tls_free(tlsCtx);
-		tlsCtx = nullptr;
+		SSL_shutdown(ssl);
+		SSL_free(ssl);
 	}
-	if (tlsConfig != nullptr)
+	if (sslCtx != nullptr)
 	{
-		tls_config_free(tlsConfig);
-		tlsConfig = nullptr;
+		SSL_CTX_free(sslCtx);
 	}
+	CRYPTO_cleanup_all_ex_data();
 }
 
 unsigned int TLSContext::getProtocols() const
 {
-	return protocols;
+	return version;
 }
 
 std::vector<std::string> TLSContext::getCiphers() const
@@ -61,103 +61,45 @@ std::vector<std::string> TLSContext::getCiphers() const
 }
 
 /********************* TLSContextBuilder *********************/
-TLSContextBuilder::Builder &TLSContextBuilder::Builder::newServerBuilder()
-{
-	if (-1 == tls_init())
-	{
-		throw std::runtime_error("TLS initial failed!");
-	}
-	tlsContext.tlsCtx = tls_server();
-	if (tlsContext.tlsCtx == nullptr)
-	{
-		throw std::runtime_error("TLS context create failed!");
-	}
-	tlsContext.tlsConfig = tls_config_new();
-	if (tlsContext.tlsConfig == nullptr)
-	{
-		tls_free(tlsContext.tlsCtx);
-		tlsContext.tlsCtx = nullptr;
-		throw std::runtime_error("TLS config create failed!");
-	}
-	return *this;
-}
-
 TLSContextBuilder::Builder &TLSContextBuilder::Builder::newClientBuilder()
 {
-	if (-1 == tls_init())
+	/* SSL init */
+	if (0 == OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, nullptr))
 	{
-		throw std::runtime_error("TLS initial failed!");
+		throw std::runtime_error("OpenSSL initial failed!");
 	}
-	tlsContext.tlsCtx = tls_client();
-	if (tlsContext.tlsCtx == nullptr)
+
+	const SSL_METHOD *sslMethod = TLS_client_method();
+	SSL_CTX *sslCtx = SSL_CTX_new(sslMethod);
+	if (sslCtx == nullptr)
 	{
-		throw std::runtime_error("TLS context create failed!");
+		throw std::runtime_error("SSL context create failed!");
 	}
-	tlsContext.tlsConfig = tls_config_new();
-	if (tlsContext.tlsConfig == nullptr)
+	this->tlsContext.sslCtx = sslCtx;
+
+	tlsContext.ssl = SSL_new(sslCtx);
+	if (tlsContext.ssl == nullptr)
 	{
-		tls_free(tlsContext.tlsCtx);
-		tlsContext.tlsCtx = nullptr;
-		throw std::runtime_error("TLS config create failed!");
+		throw std::runtime_error("SSL create failed!");
 	}
 	return *this;
 }
 
-TLSContextBuilder::Builder &TLSContextBuilder::Builder::setProtocols(unsigned int protocols)
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::setMinVersion(unsigned int version)
 {
-	assert(this->tlsContext.tlsConfig != nullptr);
-	if (-1 == tls_config_set_protocols(tlsContext.tlsConfig, protocols))
+	assert(this->tlsContext.ssl != nullptr);
+	if (0 == SSL_set_min_proto_version(this->tlsContext.ssl, version))
 	{
-		std::string exceptWhat("TLS set protocols error!");
-		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
+		std::string exceptWhat("Set TLS version error!");
+		throw std::runtime_error(exceptWhat);
 	}
-	this->tlsContext.protocols = protocols;
-	return *this;
-}
-
-TLSContextBuilder::Builder &TLSContextBuilder::Builder::setCiphers(const std::vector<std::string> &ciphers)
-{
-	assert(this->tlsContext.tlsConfig != nullptr);
-	std::string _ciphers;
-	for (const std::string &cipher:ciphers)
-	{
-		_ciphers.append(":" + cipher);
-	}
-	_ciphers.erase(_ciphers.begin());
-	if (-1 == tls_config_set_ciphers(tlsContext.tlsConfig, _ciphers.c_str()))
-	{
-		std::string exceptWhat("TLS set protocols error!");
-		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
-	}
-	this->tlsContext.ciphers = ciphers;
-	return *this;
-}
-
-TLSContextBuilder::Builder &TLSContextBuilder::Builder::setKeyFile(const std::string &keyFile)
-{
-	assert(this->tlsContext.tlsConfig != nullptr);
-	if (-1 == tls_config_set_key_file(tlsContext.tlsConfig, keyFile.c_str()))
-	{
-		std::string exceptWhat("TLS set key file error!");
-		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
-	}
-	return *this;
-}
-
-TLSContextBuilder::Builder &TLSContextBuilder::Builder::setCertFile(const std::string &certFile)
-{
-	assert(this->tlsContext.tlsConfig != nullptr);
-	if (-1 == tls_config_set_cert_file(tlsContext.tlsConfig, certFile.c_str()))
-	{
-		std::string exceptWhat("TLS set key file error!");
-		throw std::runtime_error(exceptWhat + tls_config_error(this->tlsContext.tlsConfig));
-	}
+	this->tlsContext.version = version;
 	return *this;
 }
 
 TLSContext TLSContextBuilder::Builder::build()
 {
-	assert(this->tlsContext.tlsConfig != nullptr);
+	assert(this->tlsContext.ssl != nullptr);
 	return std::move(this->tlsContext);
 }
 

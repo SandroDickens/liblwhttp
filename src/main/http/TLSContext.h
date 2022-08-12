@@ -2,17 +2,12 @@
 #define LWHTTP_TLSCONTEXT_H
 
 #include <string>
+#include <openssl/ssl.h>
 
-struct tls;
-struct tls_config;
-
-#define    TLS_PROTOCOL_1_0 (1 << 1) // same as TLS_PROTOCOL_TLSv1_0 in <tls.h>
-#define    TLS_PROTOCOL_1_1 (1 << 2) // same as TLS_PROTOCOL_TLSv1_1 in <tls.h>
-#define    TLS_PROTOCOL_1_2 (1 << 3) // same as TLS_PROTOCOL_TLSv1_2 in <tls.h>
-#define    TLS_PROTOCOL_1_3 (1 << 4) // same as TLS_PROTOCOL_TLSv1_3 in <tls.h>
-#define    TLS_PROTOCOL_V1 (TLS_PROTOCOL_1_0|TLS_PROTOCOL_1_1|TLS_PROTOCOL_1_2|TLS_PROTOCOL_1_3)
-#define    TLS_PROTOCOL_ALL TLS_PROTOCOL_V1
-#define    TLS_PROTOCOL_SAFE (TLS_PROTOCOL_1_2|TLS_PROTOCOL_1_3)
+#define TLSv1   TLS1_VERSION
+#define TLSv1_1 TLS1_1_VERSION
+#define TLSv1_2 TLS1_2_VERSION
+#define TLSv1_3 TLS1_3_VERSION
 
 /************************ TLSContext *************************/
 class TLSContext
@@ -35,9 +30,9 @@ public:
 	[[nodiscard]] std::vector<std::string> getCiphers() const;
 
 public:
-	tls *tlsCtx = nullptr;
-	tls_config *tlsConfig = nullptr;
-	unsigned int protocols = TLS_PROTOCOL_1_2;
+	SSL_CTX *sslCtx = nullptr;
+	SSL *ssl = nullptr;
+	unsigned int version = TLSv1;
 	std::vector<std::string> ciphers;
 };
 
@@ -48,17 +43,9 @@ public:
 	class Builder
 	{
 	public:
-		Builder &newServerBuilder();
-
 		Builder &newClientBuilder();
 
-		Builder &setProtocols(unsigned int protocols);
-
-		Builder &setCiphers(const std::vector<std::string> &ciphers);
-
-		Builder &setKeyFile(const std::string &keyFile);
-
-		Builder &setCertFile(const std::string &certFile);
+		Builder &setMinVersion(unsigned int version);
 
 		TLSContext build();
 

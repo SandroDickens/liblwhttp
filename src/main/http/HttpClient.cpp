@@ -2,7 +2,7 @@
 #include <memory>
 #include <sstream>
 
-#include <tls.h>
+#include <openssl/ssl.h>
 
 #include "HttpRequest.h"
 #include "HttpResponse.h"
@@ -57,7 +57,7 @@ struct GenericAddr
 	{
 		in_addr addr4;
 		in6_addr addr6;
-	} addr;
+	}addr;
 };
 
 std::vector<GenericAddr> getAddrByDomain(const std::string &hostName)
@@ -120,7 +120,7 @@ void setSocketNonBlock(SocketHandle socketHandle)
 		{
 #ifdef _DEBUG
 			printf("%s,L%d,set socket flags to non-blocking failed: %s(%d)\n", __func__, __LINE__, strerror(errno),
-				   errno);
+			       errno);
 #endif
 		}
 	}
@@ -236,7 +236,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 	else
 	{
 		std::vector<GenericAddr> serverAddrVec = getAddrByDomain(host);
-		for (const auto &tmp: serverAddrVec)
+		for (const auto &tmp:serverAddrVec)
 		{
 			SocketHandle handle = INVALID_FD;
 			if (tmp.family == AF_INET)
@@ -463,7 +463,8 @@ HttpClientNonTlsImpl::~HttpClientNonTlsImpl()
 /********************* HttpClientTlsImpl *********************/
 size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &response)
 {
-	assert((this->tlsContext.tlsCtx != nullptr) && (this->tlsContext.tlsConfig != nullptr));
+	assert(this->tlsContext.ssl != nullptr);
+	SSL *dupSSL = SSL_dup(this->tlsContext.ssl);
 	std::string host = httpRequest.uri.getHost();
 
 	SocketHandle socketHandle = createSocket(httpRequest.uri.getHost(), httpRequest.uri.getPort(), false);
@@ -472,35 +473,51 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		return 0;
 	}
 
-	if (-1 == tls_connect_socket(this->tlsContext.tlsCtx, socketHandle, host.c_str()))
+	SSL_set_fd(dupSSL, socketHandle);
+	int var = SSL_connect(dupSSL);
+	if (var != 1)
 	{
 #ifdef _DEBUG
-		printf("%s:%d tls connect to server failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
+		int ssl_errno = SSL_get_error(dupSSL, var);
+		printf("%s:%d tls connect to server failed: %d\n", __func__, __LINE__, ssl_errno);
 #endif
+		SSL_free(dupSSL);
+		closeSocket(socketHandle);
 		return 0;
 	}
 	std::string requestLine = httpRequest.getRequestLine();
 	HttpHeader header = httpRequest.getHeader();
 	header.setField("user-agent", this->userAgent);
 	std::string requestStr = requestLine + header.serialize();
-	ssize_t sendLen = tls_write(this->tlsContext.tlsCtx, requestStr.c_str(), requestStr.length());
-	if (sendLen < 0)
+	size_t sendLen = 0;
+	var = SSL_write_ex(dupSSL, requestStr.c_str(), requestStr.length(), &sendLen);
+	if (0 == var)
 	{
 #ifdef _DEBUG
-		printf("%s:%d send request header failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
+		int ssl_errno = SSL_get_error(dupSSL, var);
+		printf("%s:%d send request header failed: %d\n", __func__, __LINE__, ssl_errno);
 #endif
+		SSL_shutdown(dupSSL);
+		SSL_free(dupSSL);
+		closeSocket(socketHandle);
 		return 0;
 	}
 	if ((httpRequest.body != nullptr) && (httpRequest.body->getBodyLength() > 0))
 	{
-		sendLen = tls_write(this->tlsContext.tlsCtx, httpRequest.body->getContent(), httpRequest.body->getBodyLength());
-		if (sendLen < 0)
+		size_t written = 0;
+		var = SSL_write_ex(dupSSL, httpRequest.body->getContent(), httpRequest.body->getBodyLength(), &written);
+		if (0 == var)
 		{
 #ifdef _DEBUG
-			printf("%s:%d send request body failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
+			int ssl_errno = SSL_get_error(dupSSL, var);
+			printf("%s:%d send request body failed: %d\n", __func__, __LINE__, ssl_errno);
 #endif
+			SSL_shutdown(dupSSL);
+			SSL_free(dupSSL);
+			closeSocket(socketHandle);
 			return 0;
 		}
+		sendLen += written;
 	}
 	char buffer[BUFFER_SIZE];
 	memset(buffer, 0, sizeof(buffer));
@@ -510,57 +527,59 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 	size_t contentLen = 0;
 	while (true)
 	{
-		ssize_t readLen = tls_read(this->tlsContext.tlsCtx, buffer + dataLen, sizeof(buffer) - dataLen);
-		if ((readLen != TLS_WANT_POLLIN) && (readLen != TLS_WANT_POLLOUT))
+		size_t readBytes = 0;
+		var = SSL_read_ex(dupSSL, buffer + dataLen, sizeof(buffer) - dataLen, &readBytes);
+		if (0 == var)
 		{
-			// TLS_WANT_POLLIN: The underlying read file descriptor needs to be readable in order to continue.
-			// TLS_WANT_POLLOUT: The underlying write file descriptor needs to be writeable in order to continue.
-			if (readLen > 0)
+#ifdef _DEBUG
+			int ssl_errno = SSL_get_error(dupSSL, var);
+			printf("%s:%d read response failed: %d\n", __func__, __LINE__, ssl_errno);
+#endif
+			break;
+		}
+		else
+		{
+			dataLen += readBytes;
+			if (headLen == 0)
 			{
-				dataLen += readLen;
-				if (headLen == 0)
+				headLen = response.buildHeader(buffer, dataLen);
+				char tmpBuff[BUFFER_SIZE];
+				memcpy(tmpBuff, buffer + headLen, dataLen - headLen);
+				dataLen = dataLen - headLen;
+				memset(buffer, 0, sizeof(buffer));
+				memcpy(buffer, tmpBuff, dataLen);
+				contentLen = response.getBodyLength();
+				if (contentLen == 0)
 				{
-					headLen = response.buildHeader(buffer, dataLen);
-					char tmpBuff[BUFFER_SIZE];
-					memcpy(tmpBuff, buffer + headLen, dataLen - headLen);
-					dataLen = dataLen - headLen;
-					memset(buffer, 0, sizeof(buffer));
-					memcpy(buffer, tmpBuff, dataLen);
-					contentLen = response.getBodyLength();
-					if (contentLen == 0)
+					std::string transEnc = response.getHeader().getField("Transfer-Encoding");
+					if (std::string::npos != transEnc.find("chunked"))
 					{
-						std::string transEnc = response.getHeader().getField("Transfer-Encoding");
-						if (std::string::npos != transEnc.find("chunked"))
-						{
-							isChunked = true;
-						}
-					}
-				}
-				if (contentLen != 0)
-				{
-					if (dataLen >= contentLen)
-					{
-						break;
-					}
-				}
-				else if (isChunked)
-				{
-					char contentEnd[] = "0\r\n\r\n";
-					auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), buffer, dataLen);
-					if (resultPair.first)
-					{
-						dataLen = resultPair.second;
-						break;
+						isChunked = true;
 					}
 				}
 			}
-			else
+			if (contentLen != 0)
 			{
-				printf("TLS send error %ld\n", readLen);
-				break;
+				if (dataLen >= contentLen)
+				{
+					break;
+				}
+			}
+			else if (isChunked)
+			{
+				char contentEnd[] = "0\r\n\r\n";
+				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), buffer, dataLen);
+				if (resultPair.first)
+				{
+					dataLen = resultPair.second;
+					break;
+				}
 			}
 		}
 	}
+	SSL_shutdown(dupSSL);
+	SSL_free(dupSSL);
+	closeSocket(socketHandle);
 	if (dataLen > 0)
 	{
 		response.build(buffer, dataLen);
@@ -587,7 +606,7 @@ HttpClientTlsImpl::HttpClientTlsImpl()
 		printf("WSAStartup failed! %d\n", wsaError);
 	}
 #endif
-	this->tlsContext = TLSContextBuilder::newBuilder().newClientBuilder().setProtocols(TLS_PROTOCOL_SAFE).build();
+	this->tlsContext = TLSContextBuilder::newBuilder().newClientBuilder().setMinVersion(TLSv1_1).build();
 }
 
 HttpClientTlsImpl::~HttpClientTlsImpl()

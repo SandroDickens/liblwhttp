@@ -56,7 +56,7 @@ int main()
 		memcpy(body.data(), response2.getResponseBody()->getContent(), bodyLength);
 		body[bodyLength] = '\0';
 		std::string bodyStr(body.data());
-		//std::cout << bodyStr;
+		std::cout << bodyStr;
 	}
 
 	url = URL("http://10.0.0.6:8080");
