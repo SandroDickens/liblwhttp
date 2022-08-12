@@ -16,10 +16,10 @@ class HttpResponse;
 #include <WinSock2.h>
 
 using SocketHandle = SOCKET;
-#define INVALID_HANDLE INVALID_SOCKET
+#define INVALID_FD INVALID_SOCKET
 #elif defined(__linux__)
 using SocketHandle = int;
-#define INVALID_HANDLE (-1)
+#define INVALID_FD (-1)
 #else
 #error Unsupported OS
 #endif
@@ -41,6 +41,7 @@ public:
 protected:
 	Redirect redirect;
 	std::string userAgent;
+	unsigned int timeout;
 };
 
 /*********************** HttpClientProxy *********************/
@@ -68,9 +69,6 @@ public:
 	size_t send(const HttpRequest &httpRequest, HttpResponse &response) override;
 
 	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
-
-private:
-	SocketHandle socketHandle;
 };
 
 /********************* HttpClientTlsImpl *********************/
@@ -86,11 +84,12 @@ public:
 	size_t sendAsync(HttpRequest &request, std::function<HttpResponse> &responseBodyHandler) override;
 
 private:
-	SocketHandle socketHandle;
 	TLSContext tlsContext;
 };
 
 /********************* HttpClientBuilder *********************/
+constexpr unsigned int DEFAULT_TIMEOUT = 5;
+
 class HttpClientBuilder
 {
 	class Builder
@@ -100,6 +99,8 @@ class HttpClientBuilder
 		Builder &redirect(Redirect redirect);
 
 		Builder &userAgent(const std::string &agent);
+
+		Builder &timeout(unsigned int seconds = DEFAULT_TIMEOUT);
 
 		std::shared_ptr<HttpClient> build();
 

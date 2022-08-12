@@ -136,7 +136,7 @@ void setSocketNonBlock(SocketHandle socketHandle)
 SocketHandle createIPv4Socket(const in_addr &addr, unsigned short port, bool async)
 {
 	SocketHandle handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (handle == INVALID_HANDLE)
+	if (handle == INVALID_FD)
 	{
 #ifdef _DEBUG
 #ifdef _WIN32
@@ -145,7 +145,7 @@ SocketHandle createIPv4Socket(const in_addr &addr, unsigned short port, bool asy
 		printf("%s, L%d, socket create error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
 #endif
 #endif
-		return INVALID_HANDLE;
+		return INVALID_FD;
 	}
 
 	sockaddr_in remote_addr{};
@@ -165,7 +165,7 @@ SocketHandle createIPv4Socket(const in_addr &addr, unsigned short port, bool asy
 #endif
 #endif
 		closeSocket(handle);
-		handle = INVALID_HANDLE;
+		handle = INVALID_FD;
 	}
 
 	if (async)
@@ -179,7 +179,7 @@ SocketHandle createIPv4Socket(const in_addr &addr, unsigned short port, bool asy
 SocketHandle createIPv6Socket(const in6_addr &addr, unsigned short port, bool async)
 {
 	SocketHandle handle = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	if (handle == INVALID_HANDLE)
+	if (handle == INVALID_FD)
 	{
 #ifdef _DEBUG
 #ifdef _WIN32
@@ -188,7 +188,7 @@ SocketHandle createIPv6Socket(const in6_addr &addr, unsigned short port, bool as
 		printf("%s, L%d, socket create error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
 #endif
 #endif
-		return INVALID_HANDLE;
+		return INVALID_FD;
 	}
 
 	sockaddr_in6 remote_addr{};
@@ -208,7 +208,7 @@ SocketHandle createIPv6Socket(const in6_addr &addr, unsigned short port, bool as
 #endif
 #endif
 		closeSocket(handle);
-		handle = INVALID_HANDLE;
+		handle = INVALID_FD;
 	}
 
 	if (async)
@@ -220,7 +220,7 @@ SocketHandle createIPv6Socket(const in6_addr &addr, unsigned short port, bool as
 
 SocketHandle createSocket(const std::string &host, unsigned short port, bool async)
 {
-	SocketHandle socketHandle = INVALID_HANDLE;
+	SocketHandle socketHandle = INVALID_FD;
 
 	in_addr addr4{};
 	in6_addr addr6{};
@@ -238,7 +238,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 		std::vector<GenericAddr> serverAddrVec = getAddrByDomain(host);
 		for (const auto &tmp: serverAddrVec)
 		{
-			SocketHandle handle = INVALID_HANDLE;
+			SocketHandle handle = INVALID_FD;
 			if (tmp.family == AF_INET)
 			{
 				handle = createIPv4Socket(tmp.addr.addr4, port, async);
@@ -247,7 +247,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 			{
 				handle = createIPv6Socket(tmp.addr.addr6, port, async);
 			}
-			if (handle != INVALID_HANDLE)
+			if (handle != INVALID_FD)
 			{
 				socketHandle = handle;
 				break;
@@ -263,6 +263,7 @@ HttpClient::HttpClient()
 {
 	redirect = Redirect::NORMAL;
 	userAgent = "lwhttp/0.0.1";
+	timeout = DEFAULT_TIMEOUT;
 }
 
 /*********************** HttpClientProxy *********************/
@@ -311,14 +312,10 @@ size_t HttpClientProxy::sendAsync(HttpRequest &httpRequest, std::function<HttpRe
 /******************* HttpClientNonTlsImpl ********************/
 size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &response)
 {
-	if (this->socketHandle == INVALID_HANDLE)
+	SocketHandle socketHandle = createSocket(httpRequest.uri.getHost(), httpRequest.uri.getPort(), false);
+	if (socketHandle == INVALID_FD)
 	{
-		SocketHandle handle = createSocket(httpRequest.uri.getHost(), httpRequest.uri.getPort(), false);
-		if (handle == INVALID_HANDLE)
-		{
-			return -1;
-		}
-		this->socketHandle = handle;
+		return -1;
 	}
 
 	std::string requestLine = httpRequest.getRequestLine();
@@ -335,11 +332,11 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 		printf("%s:%d send request header failed:: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
 #endif
 #endif
-		return -1;
+		return 0;
 	}
 	if ((httpRequest.body != nullptr) && (httpRequest.body->getBodyLength() > 0))
 	{
-		sendLen = ::send(this->socketHandle, httpRequest.body->getContent(), httpRequest.body->getBodyLength(), 0);
+		sendLen = ::send(socketHandle, httpRequest.body->getContent(), httpRequest.body->getBodyLength(), 0);
 		if (sendLen < 0)
 		{
 #ifdef _DEBUG
@@ -358,7 +355,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	size_t contentLen = 0;
 	while (true)
 	{
-		long readLen = ::recv(this->socketHandle, buffer + dataLen, sizeof(buffer) - dataLen, 0);
+		long readLen = ::recv(socketHandle, buffer + dataLen, sizeof(buffer) - dataLen, 0);
 		if (readLen > 0)
 		{
 			dataLen += readLen;
@@ -370,7 +367,11 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 				dataLen = dataLen - headLen;
 				memset(buffer, 0, sizeof(buffer));
 				memcpy(buffer, tmpBuff, dataLen);
-				contentLen = response.getBodyLength();
+				auto tmp = response.getHeader().getField("Content-Length");
+				if (!tmp.empty())
+				{
+					contentLen = std::stoul(tmp);
+				}
 				if (contentLen == 0)
 				{
 					std::string transEnc = response.getHeader().getField("Transfer-Encoding");
@@ -400,20 +401,29 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 		}
 		else
 		{
+#ifdef _WIN32
+			auto erroCode = WSAGetLastError();
+			if ((erroCode != WSAEWOULDBLOCK) && (erroCode != WSAEINTR))
+			{
+#ifdef _DEBUG
+				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, erroCode);
+#endif
+				break;
+			}
+#elif __linux__
 			auto _t_errno = errno;
 			if ((_t_errno != 0) && (_t_errno != EINTR))
 			{
 #ifdef _DEBUG
-#ifdef _WIN32
-				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, WSAGetLastError());
-#elif __linux__
 				printf("%s:%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
-#endif
 #endif
 				break;
 			}
+#endif
 		}
 	}
+
+	closeSocket(socketHandle);
 	if (dataLen > 0)
 	{
 		response.build(buffer, dataLen);
@@ -440,19 +450,15 @@ HttpClientNonTlsImpl::HttpClientNonTlsImpl()
 		printf("WSAStartup failed! %d\n", wsaError);
 	}
 #endif
-	socketHandle = INVALID_HANDLE;
 }
 
 HttpClientNonTlsImpl::~HttpClientNonTlsImpl()
 {
-	if (socketHandle != INVALID_HANDLE)
-	{
-		closeSocket(socketHandle);
-	}
 #ifdef _WIN32
 	WSACleanup();
 #endif
 }
+
 
 /********************* HttpClientTlsImpl *********************/
 size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &response)
@@ -460,22 +466,18 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 	assert((this->tlsContext.tlsCtx != nullptr) && (this->tlsContext.tlsConfig != nullptr));
 	std::string host = httpRequest.uri.getHost();
 
-	if (this->socketHandle == INVALID_HANDLE)
+	SocketHandle socketHandle = createSocket(httpRequest.uri.getHost(), httpRequest.uri.getPort(), false);
+	if (socketHandle == INVALID_FD)
 	{
-		SocketHandle handle = createSocket(httpRequest.uri.getHost(), httpRequest.uri.getPort(), false);
-		if (handle == INVALID_HANDLE)
-		{
-			return -1;
-		}
-		this->socketHandle = handle;
+		return 0;
 	}
 
-	if (-1 == tls_connect_socket(this->tlsContext.tlsCtx, this->socketHandle, host.c_str()))
+	if (-1 == tls_connect_socket(this->tlsContext.tlsCtx, socketHandle, host.c_str()))
 	{
 #ifdef _DEBUG
 		printf("%s:%d tls connect to server failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
 #endif
-		return -1;
+		return 0;
 	}
 	std::string requestLine = httpRequest.getRequestLine();
 	HttpHeader header = httpRequest.getHeader();
@@ -487,7 +489,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 #ifdef _DEBUG
 		printf("%s:%d send request header failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
 #endif
-		return -1;
+		return 0;
 	}
 	if ((httpRequest.body != nullptr) && (httpRequest.body->getBodyLength() > 0))
 	{
@@ -497,7 +499,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 #ifdef _DEBUG
 			printf("%s:%d send request body failed: %s\n", __func__, __LINE__, tls_error(this->tlsContext.tlsCtx));
 #endif
-			return -1;
+			return 0;
 		}
 	}
 	char buffer[BUFFER_SIZE];
@@ -585,17 +587,11 @@ HttpClientTlsImpl::HttpClientTlsImpl()
 		printf("WSAStartup failed! %d\n", wsaError);
 	}
 #endif
-	socketHandle = INVALID_HANDLE;
 	this->tlsContext = TLSContextBuilder::newBuilder().newClientBuilder().setProtocols(TLS_PROTOCOL_SAFE).build();
 }
 
 HttpClientTlsImpl::~HttpClientTlsImpl()
 {
-	/*
-	if (socketHandle != INVALID_HANDLE)
-	{
-		closeSocket(socketHandle);
-	}*/
 #ifdef _WIN32
 	WSACleanup();
 #endif
@@ -625,6 +621,15 @@ HttpClientBuilder::Builder &HttpClientBuilder::Builder::userAgent(const std::str
 		this->client = std::make_shared<HttpClientProxy>();
 	}
 	this->client->userAgent = agent;
+	return *this;
+}
+
+HttpClientBuilder::Builder &HttpClientBuilder::Builder::timeout(unsigned int seconds)
+{
+	if (seconds > 0)
+	{
+		this->client->timeout = seconds;
+	}
 	return *this;
 }
 
