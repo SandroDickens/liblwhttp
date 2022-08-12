@@ -29,11 +29,20 @@ public:
 
 	[[nodiscard]] std::vector<std::string> getCiphers() const;
 
+private:
+	struct Initializer
+	{
+		Initializer();
+
+		~Initializer();
+	};
+
 public:
 	SSL_CTX *sslCtx = nullptr;
 	SSL *ssl = nullptr;
 	unsigned int version = TLSv1;
 	std::vector<std::string> ciphers;
+	static Initializer initializer;
 };
 
 /********************* TLSContextBuilder *********************/

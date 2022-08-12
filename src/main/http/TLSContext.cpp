@@ -6,7 +6,18 @@
 
 #include "TLSContext.h"
 
+
 /************************ TLSContext *************************/
+TLSContext::Initializer::Initializer()
+{
+	OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, nullptr);
+}
+
+TLSContext::Initializer::~Initializer()
+{
+	CRYPTO_cleanup_all_ex_data();
+}
+
 TLSContext::TLSContext(TLSContext &&other) noexcept
 {
 	if (this != &other)
@@ -47,7 +58,6 @@ TLSContext::~TLSContext()
 	{
 		SSL_CTX_free(sslCtx);
 	}
-	CRYPTO_cleanup_all_ex_data();
 }
 
 unsigned int TLSContext::getProtocols() const
@@ -64,10 +74,12 @@ std::vector<std::string> TLSContext::getCiphers() const
 TLSContextBuilder::Builder &TLSContextBuilder::Builder::newClientBuilder()
 {
 	/* SSL init */
+	/*
 	if (0 == OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, nullptr))
 	{
 		throw std::runtime_error("OpenSSL initial failed!");
 	}
+	 */
 
 	const SSL_METHOD *sslMethod = TLS_client_method();
 	SSL_CTX *sslCtx = SSL_CTX_new(sslMethod);

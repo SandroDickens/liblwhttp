@@ -359,6 +359,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 		if (readLen > 0)
 		{
 			dataLen += readLen;
+			buffer[dataLen] = '\0';
 			if (headLen == 0)
 			{
 				headLen = response.buildHeader(buffer, dataLen);
@@ -540,6 +541,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		else
 		{
 			dataLen += readBytes;
+			buffer[dataLen] = '\0';
 			if (headLen == 0)
 			{
 				headLen = response.buildHeader(buffer, dataLen);
@@ -548,7 +550,11 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 				dataLen = dataLen - headLen;
 				memset(buffer, 0, sizeof(buffer));
 				memcpy(buffer, tmpBuff, dataLen);
-				contentLen = response.getBodyLength();
+				auto tmp = response.getHeader().getField("Content-Length");
+				if (!tmp.empty())
+				{
+					contentLen = std::stoul(tmp);
+				}
 				if (contentLen == 0)
 				{
 					std::string transEnc = response.getHeader().getField("Transfer-Encoding");

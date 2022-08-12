@@ -3,7 +3,9 @@
 
 #include <functional>
 #include <mutex>
+#include <memory>
 
+#include "HttpBase.h"
 #include "TLSContext.h"
 
 class HttpRequest;
