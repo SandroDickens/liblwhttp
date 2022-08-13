@@ -1,5 +1,6 @@
 #include <cassert>
 #include <sstream>
+#include <vector>
 #include "HttpResponse.h"
 #include "utils.h"
 
