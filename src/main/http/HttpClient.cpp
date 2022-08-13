@@ -371,7 +371,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 #ifdef _WIN32
 		len = static_cast<int>(httpRequest.body->getBodyLength());
 #else
-		len = httpRequest.body->getBodyLength()
+		len = httpRequest.body->getBodyLength();
 #endif
 		sendLen = ::send(socketHandle, httpRequest.body->getContent(), len, 0);
 		if (sendLen < 0)
@@ -520,7 +520,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		return 0;
 	}
 
-	SSL_set_fd(dupSSL, (int)socketHandle);
+	SSL_set_fd(dupSSL, static_cast<int>(socketHandle));
 	int var = SSL_connect(dupSSL);
 	if (var != 1)
 	{
