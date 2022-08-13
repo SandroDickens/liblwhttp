@@ -1,7 +1,7 @@
-#include "http/URL.h"
-#include "http/HttpClient.h"
-#include "http/HttpRequest.h"
-#include "http/HttpResponse.h"
+#include <memory>
+#include <iostream>
+
+#include "http/lwhttp.h"
 
 void multiRequestTest()
 {
@@ -12,7 +12,7 @@ void multiRequestTest()
 	};
 	std::shared_ptr<HttpClient> client = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent(
 			"lwhttp/0.0.1").build();
-	for (const auto &var:urls)
+	for (const auto &var: urls)
 	{
 		URL url = URL(var);
 		HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();

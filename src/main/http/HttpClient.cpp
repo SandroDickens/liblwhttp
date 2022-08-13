@@ -57,7 +57,7 @@ struct GenericAddr
 	{
 		in_addr addr4;
 		in6_addr addr6;
-	}addr;
+	} addr;
 };
 
 std::vector<GenericAddr> getAddrByDomain(const std::string &hostName)
@@ -120,7 +120,7 @@ void setSocketNonBlock(SocketHandle socketHandle)
 		{
 #ifdef _DEBUG
 			printf("%s,L%d,set socket flags to non-blocking failed: %s(%d)\n", __func__, __LINE__, strerror(errno),
-			       errno);
+				   errno);
 #endif
 		}
 	}
@@ -236,7 +236,7 @@ SocketHandle createSocket(const std::string &host, unsigned short port, bool asy
 	else
 	{
 		std::vector<GenericAddr> serverAddrVec = getAddrByDomain(host);
-		for (const auto &tmp:serverAddrVec)
+		for (const auto &tmp: serverAddrVec)
 		{
 			SocketHandle handle = INVALID_FD;
 			if (tmp.family == AF_INET)
@@ -322,7 +322,12 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	HttpHeader header = httpRequest.getHeader();
 	header.setField("user-agent", this->userAgent);
 	std::string requestStr = requestLine + header.serialize();
-	long sendLen = ::send(socketHandle, requestStr.c_str(), requestStr.length(), 0);
+#ifdef _WIN32
+	int len = static_cast<int>(requestStr.length());
+#else
+	size_t len =requestStr.length();
+#endif
+	long sendLen = ::send(socketHandle, requestStr.c_str(), len, 0);
 	if (sendLen < 0)
 	{
 #ifdef _DEBUG
@@ -336,7 +341,12 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	}
 	if ((httpRequest.body != nullptr) && (httpRequest.body->getBodyLength() > 0))
 	{
-		sendLen = ::send(socketHandle, httpRequest.body->getContent(), httpRequest.body->getBodyLength(), 0);
+#ifdef _WIN32
+		len = static_cast<int>(httpRequest.body->getBodyLength());
+#else
+		len = httpRequest.body->getBodyLength()
+#endif
+		sendLen = ::send(socketHandle, httpRequest.body->getContent(), len, 0);
 		if (sendLen < 0)
 		{
 #ifdef _DEBUG
@@ -355,7 +365,12 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	size_t contentLen = 0;
 	while (true)
 	{
-		long readLen = ::recv(socketHandle, buffer + dataLen, sizeof(buffer) - dataLen, 0);
+#ifdef _WIN32
+		len = static_cast<int>(sizeof(buffer) - dataLen);
+#else
+		len = sizeof(buffer) - dataLen;
+#endif
+		long readLen = ::recv(socketHandle, buffer + dataLen, len, 0);
 		if (readLen > 0)
 		{
 			dataLen += readLen;
@@ -474,7 +489,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		return 0;
 	}
 
-	SSL_set_fd(dupSSL, socketHandle);
+	SSL_set_fd(dupSSL, (int)socketHandle);
 	int var = SSL_connect(dupSSL);
 	if (var != 1)
 	{

@@ -2,10 +2,7 @@
 #include <memory>
 #include <vector>
 
-#include "http/HttpBase.h"
-#include "http/HttpRequest.h"
-#include "http/HttpClient.h"
-#include "http/HttpResponse.h"
+#include "http/lwhttp.h"
 
 
 int main()

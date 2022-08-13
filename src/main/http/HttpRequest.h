@@ -3,9 +3,10 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
+
 #include "URL.h"
 #include "HttpBase.h"
-
 
 /************************ HttpRequest ************************/
 class HttpRequestBuilder;

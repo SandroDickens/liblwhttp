@@ -160,7 +160,7 @@ void StatusLine::deserialize(const std::string &str)
 	}
 	catch (std::exception &e)
 	{
-		throw std::invalid_argument("Invalid HTTP status code " + code);
+		throw std::invalid_argument("Invalid HTTP status code " + code + e.what());
 	}
 
 	begin = str.find_first_not_of(' ', end);
