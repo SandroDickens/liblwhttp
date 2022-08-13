@@ -28,7 +28,34 @@
 #endif
 
 /************************** Common ***************************/
-constexpr long BUFFER_SIZE = 64L * 1024L;
+struct VariableArray
+{
+	VariableArray()
+	{
+		length = BUFFER_SIZE;
+		buffer = new char[length];
+		memset(buffer, 0, length);
+	}
+
+	~VariableArray()
+	{
+		delete[] buffer;
+	}
+
+	void expand()
+	{
+		size_t newLength = length << 2;
+		char *newBuff = new char[newLength];
+		memset(newBuff, 0, newLength);
+		memcpy(newBuff, buffer, length);
+		buffer = newBuff;
+		length = newLength;
+	}
+
+	static constexpr long BUFFER_SIZE = 64L * 1024L;
+	size_t length;
+	char *buffer;
+};
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -315,7 +342,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	SocketHandle socketHandle = createSocket(httpRequest.uri.getHost(), httpRequest.uri.getPort(), false);
 	if (socketHandle == INVALID_FD)
 	{
-		return -1;
+		return 0;
 	}
 
 	std::string requestLine = httpRequest.getRequestLine();
@@ -358,31 +385,57 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 #endif
 		}
 	}
-	char buffer[BUFFER_SIZE];
+
 	size_t headLen = 0;
 	size_t dataLen = 0;
 	bool isChunked = false;
 	size_t contentLen = 0;
+	VariableArray array;
 	while (true)
 	{
 #ifdef _WIN32
-		len = static_cast<int>(sizeof(buffer) - dataLen);
+		len = static_cast<int>(array.length - dataLen);
 #else
-		len = sizeof(buffer) - dataLen;
+		len = array.length - dataLen;
 #endif
-		long readLen = ::recv(socketHandle, buffer + dataLen, len, 0);
-		if (readLen > 0)
+		long readLen = ::recv(socketHandle, array.buffer + dataLen, len, 0);
+		if (readLen <= 0)
+		{
+#ifdef _WIN32
+			auto erroCode = WSAGetLastError();
+			if ((erroCode != WSAEWOULDBLOCK) && (erroCode != WSAEINTR))
+			{
+#ifdef _DEBUG
+				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, erroCode);
+#endif
+				break;
+			}
+#elif __linux__
+			auto _t_errno = errno;
+			if ((_t_errno != 0) && (_t_errno != EINTR))
+			{
+#ifdef _DEBUG
+				printf("%s:%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
+#endif
+				break;
+			}
+#endif
+		}
+		else
 		{
 			dataLen += readLen;
-			buffer[dataLen] = '\0';
+			if (dataLen >= array.length)
+			{
+				array.expand();
+			}
 			if (headLen == 0)
 			{
-				headLen = response.buildHeader(buffer, dataLen);
-				char tmpBuff[BUFFER_SIZE];
-				memcpy(tmpBuff, buffer + headLen, dataLen - headLen);
+				headLen = response.buildHeader(array.buffer, dataLen);
+				char tmpBuff[VariableArray::BUFFER_SIZE];
+				memcpy(tmpBuff, array.buffer + headLen, dataLen - headLen);
 				dataLen = dataLen - headLen;
-				memset(buffer, 0, sizeof(buffer));
-				memcpy(buffer, tmpBuff, dataLen);
+				memset(array.buffer, 0, array.length);
+				memcpy(array.buffer, tmpBuff, dataLen);
 				auto tmp = response.getHeader().getField("Content-Length");
 				if (!tmp.empty())
 				{
@@ -407,7 +460,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 			else if (isChunked)
 			{
 				char contentEnd[] = "0\r\n\r\n";
-				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), buffer, dataLen);
+				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), array.buffer, dataLen);
 				if (resultPair.first)
 				{
 					dataLen = resultPair.second;
@@ -415,34 +468,12 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 				}
 			}
 		}
-		else
-		{
-#ifdef _WIN32
-			auto erroCode = WSAGetLastError();
-			if ((erroCode != WSAEWOULDBLOCK) && (erroCode != WSAEINTR))
-			{
-#ifdef _DEBUG
-				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, erroCode);
-#endif
-				break;
-			}
-#elif __linux__
-			auto _t_errno = errno;
-			if ((_t_errno != 0) && (_t_errno != EINTR))
-			{
-#ifdef _DEBUG
-				printf("%s:%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
-#endif
-				break;
-			}
-#endif
-		}
 	}
 
 	closeSocket(socketHandle);
 	if (dataLen > 0)
 	{
-		response.build(buffer, dataLen);
+		response.build(array.buffer, dataLen);
 		return dataLen;
 	}
 	else
@@ -535,16 +566,16 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		}
 		sendLen += written;
 	}
-	char buffer[BUFFER_SIZE];
-	memset(buffer, 0, sizeof(buffer));
+
 	size_t headLen = 0;
 	size_t dataLen = 0;
 	bool isChunked = false;
 	size_t contentLen = 0;
+	VariableArray array;
 	while (true)
 	{
 		size_t readBytes = 0;
-		var = SSL_read_ex(dupSSL, buffer + dataLen, sizeof(buffer) - dataLen, &readBytes);
+		var = SSL_read_ex(dupSSL, array.buffer + dataLen, array.length - dataLen, &readBytes);
 		if (0 == var)
 		{
 #ifdef _DEBUG
@@ -556,15 +587,18 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		else
 		{
 			dataLen += readBytes;
-			buffer[dataLen] = '\0';
+			if (dataLen >= array.length)
+			{
+				array.expand();
+			}
 			if (headLen == 0)
 			{
-				headLen = response.buildHeader(buffer, dataLen);
-				char tmpBuff[BUFFER_SIZE];
-				memcpy(tmpBuff, buffer + headLen, dataLen - headLen);
+				headLen = response.buildHeader(array.buffer, dataLen);
+				char tmpBuff[VariableArray::BUFFER_SIZE];
+				memcpy(tmpBuff, array.buffer + headLen, dataLen - headLen);
 				dataLen = dataLen - headLen;
-				memset(buffer, 0, sizeof(buffer));
-				memcpy(buffer, tmpBuff, dataLen);
+				memset(array.buffer, 0, array.length);
+				memcpy(array.buffer, tmpBuff, dataLen);
 				auto tmp = response.getHeader().getField("Content-Length");
 				if (!tmp.empty())
 				{
@@ -589,7 +623,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 			else if (isChunked)
 			{
 				char contentEnd[] = "0\r\n\r\n";
-				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), buffer, dataLen);
+				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), array.buffer, dataLen);
 				if (resultPair.first)
 				{
 					dataLen = resultPair.second;
@@ -603,7 +637,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 	closeSocket(socketHandle);
 	if (dataLen > 0)
 	{
-		response.build(buffer, dataLen);
+		response.build(array.buffer, dataLen);
 		return dataLen;
 	}
 	else
