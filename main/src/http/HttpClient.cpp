@@ -4,10 +4,10 @@
 
 #include <openssl/ssl.h>
 
-#include "HttpRequest.h"
-#include "HttpResponse.h"
-#include "HttpClient.h"
-#include "utils.h"
+#include "../../include/http/HttpRequest.h"
+#include "../../include/http/HttpResponse.h"
+#include "../../include/http/HttpClient.h"
+#include "../../include/http/utils.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 

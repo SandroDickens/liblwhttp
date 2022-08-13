@@ -1,8 +1,8 @@
 #include <cassert>
 #include <sstream>
 #include <vector>
-#include "HttpResponse.h"
-#include "utils.h"
+#include "../../include/http/HttpResponse.h"
+#include "../../include/http/utils.h"
 
 std::unordered_map<HttpStatus, std::string> statusCodeMap = {
 		{HttpStatus::CONTINUE,                        "Continue"},

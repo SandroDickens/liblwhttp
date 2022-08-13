@@ -88,6 +88,23 @@ int main()
 输出:
 
 ```text
+$ tree ./
+./
+├── http
+│   ├── HttpBase.h
+│   ├── HttpClient.h
+│   ├── HttpRequest.h
+│   ├── HttpResponse.h
+│   ├── lwhttp.h
+│   ├── TLSContext.h
+│   └── URL.h
+├── liblwhttp.so
+└── main.cpp
+
+1 directory, 9 files
+$ g++ main.cpp -I. -L. -llwhttp -o demo
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+$ ./demo
 status: 200/OK
 response length 348, data:
 <!DOCTYPE html>

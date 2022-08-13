@@ -22,8 +22,8 @@ endif ()
 
 enable_testing()
 
-add_subdirectory(src/main)
-add_subdirectory(src/test)
+add_subdirectory(main)
+add_subdirectory(test)
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message(STATUS "Debug version...")
@@ -44,7 +44,7 @@ else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2")
 endif ()
 
-include_directories(src/main)
+include_directories(main)
 add_executable(${PROJECT_NAME} main.cpp)
 
 target_link_libraries(${PROJECT_NAME} lwhttp)

@@ -3,8 +3,8 @@
 #include <sstream>
 #include <vector>
 
-#include "HttpBase.h"
-#include "utils.h"
+#include "../../include/http/HttpBase.h"
+#include "../../include/http/utils.h"
 
 void toUpCamelCase(std::string &str)
 {

@@ -1,7 +1,7 @@
 #include <sstream>
 #include <utility>
-#include "HttpBase.h"
-#include "HttpRequest.h"
+#include "../../include/http/HttpBase.h"
+#include "../../include/http/HttpRequest.h"
 
 /************************ HttpRequest ************************/
 HttpRequest::~HttpRequest()
