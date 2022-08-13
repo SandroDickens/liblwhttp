@@ -7,8 +7,6 @@
 #include <string>
 
 
-
-
 class Serializable
 {
 public:
@@ -86,11 +84,12 @@ public:
 	{
 		contentPtr = nullptr;
 		bodyLength = 0;
-		contentPtr = new char[len];
+		contentPtr = new char[len + 1];
 		if (contentPtr != nullptr)
 		{
-			bodyLength = len;
+			bodyLength = len + 1;
 			memcpy(contentPtr, data, len);
+			contentPtr[len] = '\0';
 		}
 	}
 

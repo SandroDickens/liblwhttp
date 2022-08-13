@@ -233,12 +233,6 @@ void HttpResponse::build(const char *buffer, size_t bodyLen)
 {
 	assert(buffer != nullptr);
 	assert(bodyLen > 0);
-//	auto value = header.getField("Content-Length");
-//	if (!value.empty())
-//	{
-//		size_t contentLen = stoul(value);
-//		assert(contentLen == bodyLen);
-//	}
 	this->body = new HttpBodyImpl(buffer, bodyLen);
 	this->body->setBodyLength(bodyLen);
 }
