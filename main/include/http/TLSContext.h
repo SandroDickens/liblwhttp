@@ -17,7 +17,7 @@ enum class TLSProtocol
 	TLSv1_3 = 0x04
 };
 
-constexpr int TLSv1 = (int)TLSProtocol::TLSv1_1|(int)TLSProtocol::TLSv1_2|(int)TLSProtocol::TLSv1_3;
+constexpr int TLSv1 = static_cast<int>(TLSProtocol::TLSv1_1)|static_cast<int>(TLSProtocol::TLSv1_2)|static_cast<int>(TLSProtocol::TLSv1_3);
 
 /************************ TLSContext *************************/
 class TLSContext
