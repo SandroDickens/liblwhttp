@@ -460,7 +460,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 			else if (isChunked)
 			{
 				char contentEnd[] = "0\r\n\r\n";
-				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), array.buffer, dataLen);
+				auto resultPair = findFirstOf(contentEnd, strlen(contentEnd), array.buffer, dataLen);
 				if (resultPair.first)
 				{
 					dataLen = resultPair.second;
@@ -623,7 +623,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 			else if (isChunked)
 			{
 				char contentEnd[] = "0\r\n\r\n";
-				auto resultPair = KMPSearchFirstOf(contentEnd, strlen(contentEnd), array.buffer, dataLen);
+				auto resultPair = findFirstOf(contentEnd, strlen(contentEnd), array.buffer, dataLen);
 				if (resultPair.first)
 				{
 					dataLen = resultPair.second;

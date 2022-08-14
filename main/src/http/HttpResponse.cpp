@@ -102,7 +102,7 @@ size_t StatusLine::build(const char *buffer, size_t len)
 	assert(len > 0);
 	size_t result = 0;
 	const char statusLinePattern[] = "\r\n";
-	std::pair<bool, size_t> resultPair = KMPSearchFirstOf(statusLinePattern, strlen(statusLinePattern), buffer, len);
+	std::pair<bool, size_t> resultPair = findFirstOf(statusLinePattern, strlen(statusLinePattern), buffer, len);
 	if (resultPair.first)
 	{
 		size_t statusLen = resultPair.second + strlen(statusLinePattern);
@@ -201,7 +201,7 @@ static size_t getHttpHeader(const char *buffer, size_t len)
 {
 	size_t headLen = 0;
 	const char headerPattern[] = "\r\n\r\n";
-	std::pair<bool, size_t> resultPair = KMPSearchFirstOf(headerPattern, strlen(headerPattern), buffer, len);
+	std::pair<bool, size_t> resultPair = findFirstOf(headerPattern, strlen(headerPattern), buffer, len);
 	if (resultPair.first)
 	{
 		headLen = resultPair.second + strlen(headerPattern);
