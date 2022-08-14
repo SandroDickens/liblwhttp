@@ -4,12 +4,20 @@
 #include <string>
 #include <vector>
 
-#include <openssl/ssl.h>
+typedef struct ssl_st SSL;
+typedef struct ssl_ctx_st SSL_CTX;
 
-#define TLSv1   TLS1_VERSION
-#define TLSv1_1 TLS1_1_VERSION
-#define TLSv1_2 TLS1_2_VERSION
-#define TLSv1_3 TLS1_3_VERSION
+struct ssl_ctx_st;
+struct ssl_st;
+
+enum class TLSProtocol
+{
+	TLSv1_1 = 0x01,
+	TLSv1_2 = 0x02,
+	TLSv1_3 = 0x04
+};
+
+constexpr int TLSv1 = (int)TLSProtocol::TLSv1_1|(int)TLSProtocol::TLSv1_2|(int)TLSProtocol::TLSv1_3;
 
 /************************ TLSContext *************************/
 class TLSContext
@@ -27,7 +35,7 @@ public:
 
 	virtual ~TLSContext();
 
-	[[nodiscard]] unsigned int getProtocols() const;
+	[[nodiscard]] TLSProtocol getProtocols() const;
 
 	[[nodiscard]] std::vector<std::string> getCiphers() const;
 
@@ -42,7 +50,7 @@ private:
 public:
 	SSL_CTX *sslCtx = nullptr;
 	SSL *ssl = nullptr;
-	unsigned int version = TLSv1;
+	TLSProtocol tlsProtocol = TLSProtocol::TLSv1_2;
 	std::vector<std::string> ciphers;
 	static Initializer initializer;
 };
@@ -56,7 +64,7 @@ public:
 	public:
 		Builder &newClientBuilder();
 
-		Builder &setMinVersion(unsigned int version);
+		Builder &setMinVersion(TLSProtocol protocol);
 
 		TLSContext build();
 

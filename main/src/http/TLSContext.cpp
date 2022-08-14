@@ -7,6 +7,24 @@
 #include "../../include/http/TLSContext.h"
 
 
+long tlsProtocolToVersion(TLSProtocol protocol)
+{
+	long version;
+	switch (protocol)
+	{
+		case TLSProtocol::TLSv1_1:
+			version = TLS1_1_VERSION;
+			break;
+		case TLSProtocol::TLSv1_2:
+			version = TLS1_2_VERSION;
+			break;
+		case TLSProtocol::TLSv1_3:
+			version = TLS1_3_VERSION;
+			break;
+	}
+	return version;
+}
+
 /************************ TLSContext *************************/
 TLSContext::Initializer::Initializer()
 {
@@ -26,8 +44,7 @@ TLSContext::TLSContext(TLSContext &&other) noexcept
 		other.sslCtx = nullptr;
 		this->ssl = other.ssl;
 		other.ssl = nullptr;
-		this->version = other.version;
-		other.version = 0;
+		this->tlsProtocol = other.tlsProtocol;
 		this->ciphers = std::move(other.ciphers);
 	}
 }
@@ -40,8 +57,7 @@ TLSContext &TLSContext::operator=(TLSContext &&other) noexcept
 		other.sslCtx = nullptr;
 		this->ssl = other.ssl;
 		other.ssl = nullptr;
-		this->version = other.version;
-		other.version = 0;
+		this->tlsProtocol = other.tlsProtocol;
 		this->ciphers = std::move(other.ciphers);
 	}
 	return *this;
@@ -60,9 +76,9 @@ TLSContext::~TLSContext()
 	}
 }
 
-unsigned int TLSContext::getProtocols() const
+TLSProtocol TLSContext::getProtocols() const
 {
-	return version;
+	return tlsProtocol;
 }
 
 std::vector<std::string> TLSContext::getCiphers() const
@@ -73,14 +89,6 @@ std::vector<std::string> TLSContext::getCiphers() const
 /********************* TLSContextBuilder *********************/
 TLSContextBuilder::Builder &TLSContextBuilder::Builder::newClientBuilder()
 {
-	/* SSL init */
-	/*
-	if (0 == OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, nullptr))
-	{
-		throw std::runtime_error("OpenSSL initial failed!");
-	}
-	 */
-
 	const SSL_METHOD *sslMethod = TLS_client_method();
 	SSL_CTX *sslCtx = SSL_CTX_new(sslMethod);
 	if (sslCtx == nullptr)
@@ -94,18 +102,24 @@ TLSContextBuilder::Builder &TLSContextBuilder::Builder::newClientBuilder()
 	{
 		throw std::runtime_error("SSL create failed!");
 	}
-	return *this;
-}
-
-TLSContextBuilder::Builder &TLSContextBuilder::Builder::setMinVersion(unsigned int version)
-{
-	assert(this->tlsContext.ssl != nullptr);
-	if (0 == SSL_set_min_proto_version(this->tlsContext.ssl, version))
+	if (0 == SSL_set_min_proto_version(this->tlsContext.ssl, tlsProtocolToVersion(this->tlsContext.tlsProtocol)))
 	{
 		std::string exceptWhat("Set TLS version error!");
 		throw std::runtime_error(exceptWhat);
 	}
-	this->tlsContext.version = version;
+	return *this;
+}
+
+TLSContextBuilder::Builder &TLSContextBuilder::Builder::setMinVersion(TLSProtocol protocol)
+{
+	assert(this->tlsContext.ssl != nullptr);
+
+	if (0 == SSL_set_min_proto_version(this->tlsContext.ssl, tlsProtocolToVersion(protocol)))
+	{
+		std::string exceptWhat("Set TLS version error!");
+		throw std::runtime_error(exceptWhat);
+	}
+	this->tlsContext.tlsProtocol = protocol;
 	return *this;
 }
 

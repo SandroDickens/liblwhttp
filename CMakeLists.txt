@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(demo)
 
+option(ENABLE_DEMO "Enable demo" ON)
 option(ENABLE_TESTS "Enable test" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 
@@ -8,7 +9,7 @@ set(CMAKE_C_STANDARD 14)
 set(CMAKE_CXX_STANDARD 17)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "The default is the Release version" FORCE)
@@ -48,11 +49,11 @@ if (CMAKE_HOST_UNIX)
 endif ()
 
 include_directories(main)
-add_executable(${PROJECT_NAME} main.cpp)
-
-target_link_libraries(${PROJECT_NAME} lwhttp)
-
 add_subdirectory(main)
+
+if (ENABLE_DEMO)
+    add_subdirectory(example)
+endif ()
 
 if (ENABLE_TESTS)
     enable_testing()

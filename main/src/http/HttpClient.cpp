@@ -659,7 +659,7 @@ HttpClientTlsImpl::HttpClientTlsImpl()
 		printf("WSAStartup failed! %d\n", wsaError);
 	}
 #endif
-	this->tlsContext = TLSContextBuilder::newBuilder().newClientBuilder().setMinVersion(TLSv1_1).build();
+	this->tlsContext = TLSContextBuilder::newBuilder().newClientBuilder().setMinVersion(TLSProtocol::TLSv1_1).build();
 }
 
 HttpClientTlsImpl::~HttpClientTlsImpl()

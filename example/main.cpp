@@ -7,7 +7,7 @@ int main()
 {
 	std::shared_ptr<HttpClient> client = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent(
 			"lwhttp/0.0.1").build();
-	URL url("https://www.lwhttpd.org/demo/");
+	URL url("https://www.google.com");
 	HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 	HttpResponse response{};
 	if (0 < client->send(request, response))
