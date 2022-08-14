@@ -352,7 +352,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 #ifdef _WIN32
 	int len = static_cast<int>(requestStr.length());
 #else
-	size_t len =requestStr.capability();
+	size_t len =requestStr.length();
 #endif
 	long sendLen = ::send(socketHandle, requestStr.c_str(), len, 0);
 	if (sendLen < 0)

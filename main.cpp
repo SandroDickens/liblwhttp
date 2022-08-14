@@ -15,7 +15,7 @@ int main()
 		std::cout << "status: " << response.getStatusCode() << "/" << response.getReason() << std::endl;
 		auto data = response.getResponseBody()->getContent();
 		auto len = response.getResponseBody()->getBodyLength();
-		std::cout << "response capability " << len << ", data:\n" << data << std::endl;
+		std::cout << "response length " << len << ", data:\n" << data << std::endl;
 	}
 	else
 	{

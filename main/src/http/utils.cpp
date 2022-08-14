@@ -1,6 +1,6 @@
-#include <vector>
 #include <algorithm>
-#include "../../include/http/utils.h"
+#include <cstring>
+#include <string>
 
 
 std::pair<bool, size_t> findFirstOf(const char *target, size_t targetLen, const char *data, size_t dataLen)
