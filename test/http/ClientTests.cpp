@@ -64,7 +64,7 @@ TEST(RequestTests, GetMethod)
 	{
 		auto data = response.getResponseBody()->getContent();
 		auto len = response.getResponseBody()->getBodyLength();
-		std::cout << "response length " << len << ", data:\n" << data << std::endl;
+		//std::cout << "response length " << len << ", data:\n" << data << std::endl;
 	}
 	EXPECT_GT(ret, 0);
 	EXPECT_EQ(response.getStatusCode(), HttpStatus::OK);
@@ -84,7 +84,7 @@ TEST(RequestTests, PostMethod)
 	{
 		auto data = response.getResponseBody()->getContent();
 		auto len = response.getResponseBody()->getBodyLength();
-		std::cout << "response length " << len << ", data:\n" << data << std::endl;
+		//std::cout << "response length " << len << ", data:\n" << data << std::endl;
 	}
 	EXPECT_GT(ret, 0);
 	EXPECT_EQ(response.getStatusCode(), HttpStatus::OK);
@@ -104,7 +104,7 @@ TEST(RequestTests, PutMethod)
 	{
 		auto data = response.getResponseBody()->getContent();
 		auto len = response.getResponseBody()->getBodyLength();
-		std::cout << "response length " << len << ", data:\n" << data << std::endl;
+		//std::cout << "response length " << len << ", data:\n" << data << std::endl;
 	}
 	EXPECT_GT(ret, 0);
 	EXPECT_EQ(response.getStatusCode(), HttpStatus::OK);
@@ -124,7 +124,7 @@ TEST(RequestTests, DeleteMethod)
 	{
 		auto data = response.getResponseBody()->getContent();
 		auto len = response.getResponseBody()->getBodyLength();
-		std::cout << "response length " << len << ", data:\n" << data << std::endl;
+		//std::cout << "response length " << len << ", data:\n" << data << std::endl;
 	}
 	EXPECT_GT(ret, 0);
 	EXPECT_EQ(response.getStatusCode(), HttpStatus::OK);
