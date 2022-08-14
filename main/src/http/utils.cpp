@@ -11,7 +11,7 @@ std::pair<bool, size_t> findFirstOf(const char *target, size_t targetLen, const 
 	}
 
 	std::pair<bool, size_t> found{false, 0};
-	for (size_t index = 0; index < dataLen - targetLen; ++index)
+	for (size_t index = 0; index <= dataLen - targetLen; ++index)
 	{
 		if (target[0] == data[index])
 		{
@@ -34,7 +34,7 @@ std::pair<bool, size_t> findLastOf(const char *target, size_t targetLen, const c
 	}
 
 	std::pair<bool, size_t> found{false, 0};
-	for (size_t index = 0; index < dataLen - targetLen; ++index)
+	for (size_t index = 0; index <= dataLen - targetLen; ++index)
 	{
 		if (target[0] == data[index])
 		{

@@ -74,7 +74,7 @@ int main()
 		std::cout << "status: " << response.getStatusCode() << "/" << response.getReason() << std::endl;
 		auto data = response.getResponseBody()->getContent();
 		auto len = response.getResponseBody()->getBodyLength();
-		std::cout << "response length " << len << ", data:\n" << data << std::endl;
+		std::cout << "response capability " << len << ", data:\n" << data << std::endl;
 	}
 	else
 	{
@@ -106,7 +106,7 @@ $ g++ main.cpp -I. -L. -llwhttp -o demo
 $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
 $ ./demo
 status: 200/OK
-response length 348, data:
+response capability 348, data:
 <!DOCTYPE html>
 <html lang="en">
 <head>

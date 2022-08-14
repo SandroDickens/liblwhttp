@@ -32,9 +32,9 @@ struct VariableArray
 {
 	VariableArray()
 	{
-		length = BUFFER_SIZE;
-		buffer = new char[length];
-		memset(buffer, 0, length);
+		capability = BUFFER_SIZE;
+		buffer = new char[capability];
+		memset(buffer, 0, capability);
 	}
 
 	~VariableArray()
@@ -44,16 +44,16 @@ struct VariableArray
 
 	void expand()
 	{
-		size_t newLength = length << 2;
-		char *newBuff = new char[newLength];
-		memset(newBuff, 0, newLength);
-		memcpy(newBuff, buffer, length);
+		size_t newCap = capability << 2;
+		char *newBuff = new char[newCap];
+		memset(newBuff, 0, newCap);
+		memcpy(newBuff, buffer, capability);
 		buffer = newBuff;
-		length = newLength;
+		capability = newCap;
 	}
 
 	static constexpr long BUFFER_SIZE = 64L * 1024L;
-	size_t length;
+	size_t capability;
 	char *buffer;
 };
 
@@ -352,7 +352,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 #ifdef _WIN32
 	int len = static_cast<int>(requestStr.length());
 #else
-	size_t len =requestStr.length();
+	size_t len =requestStr.capability();
 #endif
 	long sendLen = ::send(socketHandle, requestStr.c_str(), len, 0);
 	if (sendLen < 0)
@@ -394,25 +394,24 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 	while (true)
 	{
 #ifdef _WIN32
-		len = static_cast<int>(array.length - dataLen);
+		len = static_cast<int>(array.capability - dataLen);
 #else
-		len = array.length - dataLen;
+		len = array.capability - dataLen;
 #endif
 		long readLen = ::recv(socketHandle, array.buffer + dataLen, len, 0);
 		if (readLen <= 0)
 		{
 #ifdef _WIN32
-			auto erroCode = WSAGetLastError();
-			if ((erroCode != WSAEWOULDBLOCK) && (erroCode != WSAEINTR))
+			auto errorCode = WSAGetLastError();
+			if (errorCode != WSAEINTR)
 			{
 #ifdef _DEBUG
-				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, erroCode);
+				printf("%s:%d, socket send error: %d\n", __func__, __LINE__, errorCode);
 #endif
 				break;
 			}
 #elif __linux__
-			auto _t_errno = errno;
-			if ((_t_errno != 0) && (_t_errno != EINTR))
+			if (errno != EINTR)
 			{
 #ifdef _DEBUG
 				printf("%s:%d, socket send error: %s(%d)\n", __func__, __LINE__, strerror(errno), errno);
@@ -424,7 +423,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 		else
 		{
 			dataLen += readLen;
-			if (dataLen >= array.length)
+			if (dataLen >= array.capability)
 			{
 				array.expand();
 			}
@@ -434,7 +433,7 @@ size_t HttpClientNonTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &
 				char tmpBuff[VariableArray::BUFFER_SIZE];
 				memcpy(tmpBuff, array.buffer + headLen, dataLen - headLen);
 				dataLen = dataLen - headLen;
-				memset(array.buffer, 0, array.length);
+				memset(array.buffer, 0, array.capability);
 				memcpy(array.buffer, tmpBuff, dataLen);
 				auto tmp = response.getHeader().getField("Content-Length");
 				if (!tmp.empty())
@@ -575,7 +574,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 	while (true)
 	{
 		size_t readBytes = 0;
-		var = SSL_read_ex(dupSSL, array.buffer + dataLen, array.length - dataLen, &readBytes);
+		var = SSL_read_ex(dupSSL, array.buffer + dataLen, array.capability - dataLen, &readBytes);
 		if (0 == var)
 		{
 #ifdef _DEBUG
@@ -587,7 +586,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 		else
 		{
 			dataLen += readBytes;
-			if (dataLen >= array.length)
+			if (dataLen >= array.capability)
 			{
 				array.expand();
 			}
@@ -597,7 +596,7 @@ size_t HttpClientTlsImpl::send(const HttpRequest &httpRequest, HttpResponse &res
 				char tmpBuff[VariableArray::BUFFER_SIZE];
 				memcpy(tmpBuff, array.buffer + headLen, dataLen - headLen);
 				dataLen = dataLen - headLen;
-				memset(array.buffer, 0, array.length);
+				memset(array.buffer, 0, array.capability);
 				memcpy(array.buffer, tmpBuff, dataLen);
 				auto tmp = response.getHeader().getField("Content-Length");
 				if (!tmp.empty())
