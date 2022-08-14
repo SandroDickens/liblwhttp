@@ -116,9 +116,9 @@ public:
 		return statusLine;
 	}
 
-	[[nodiscard]] int getStatusCode() const
+	[[nodiscard]] HttpStatus getStatusCode() const
 	{
-		return static_cast<int>(statusLine.getStatusCode());
+		return statusLine.getStatusCode();
 	}
 
 	[[nodiscard]] HttpVersion getVersion() const

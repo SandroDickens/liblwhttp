@@ -84,12 +84,6 @@ HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::header(HttpHeader &hea
 	return *this;
 }
 
-HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::method(HttpMethod &method)
-{
-	this->httpRequest.method = method;
-	return *this;
-}
-
 HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::GET()
 {
 	this->httpRequest.method = HttpMethod::GET;
@@ -99,6 +93,7 @@ HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::GET()
 HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::POST(std::shared_ptr<HttpBody> body)
 {
 	this->httpRequest.method = HttpMethod::POST;
+	this->httpRequest.header.setField("Content-Length", std::to_string(body->getBodyLength()));
 	this->httpRequest.body = std::move(body);
 	return *this;
 }
@@ -106,6 +101,7 @@ HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::POST(std::shared_ptr<H
 HttpRequestBuilder::Builder &HttpRequestBuilder::Builder::PUT(std::shared_ptr<HttpBody> body)
 {
 	this->httpRequest.method = HttpMethod::PUT;
+	this->httpRequest.header.setField("Content-Length", std::to_string(body->getBodyLength()));
 	this->httpRequest.body = std::move(body);
 	return *this;
 }

@@ -51,8 +51,6 @@ public:
 
 		Builder &header(HttpHeader &header);
 
-		Builder &method(HttpMethod &method);
-
 		Builder &GET();
 
 		Builder &POST(std::shared_ptr<HttpBody> body);
