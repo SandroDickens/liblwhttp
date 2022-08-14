@@ -45,10 +45,12 @@ struct VariableArray
 	{
 		size_t newCap = capability << 2;
 		char *newBuff = new char[newCap];
+		char *oldBuff = buffer;
 		memset(newBuff, 0, newCap);
 		memcpy(newBuff, buffer, capability);
 		buffer = newBuff;
 		capability = newCap;
+		delete[] oldBuff;
 	}
 
 	static constexpr long BUFFER_SIZE = 64L * 1024L;
