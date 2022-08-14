@@ -10,6 +10,8 @@ liblwhttp(lightweight http library)是一个简单的HTTP客户端库, 支持HTT
 - Linux  
   在Linux系统下, liblwhttp编译得到的是动态库liblwhttp.so
 
+## Wiki
+[Wiki](../../wiki)
 ## 编译
 
 ```shell
