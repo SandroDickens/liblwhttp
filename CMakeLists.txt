@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(demo)
 
+option(ENABLE_TESTS "Enable test" OFF)
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+
 set(CMAKE_C_STANDARD 14)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -20,31 +23,38 @@ if (CMAKE_HOST_UNIX)
 	-Wno-unused-value -march=native -pipe")
 endif ()
 
-enable_testing()
-
-add_subdirectory(main)
-add_subdirectory(test)
-
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    message(STATUS "Debug version...")
-    if (CMAKE_HOST_UNIX)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-        #set(ASAN_FLAGS "-fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize=null -fno-sanitize=alignment")
-        set(ASAN_FLAGS "")
-    else ()
-        set(ASAN_FLAGS "")
-    endif ()
+# AddressSanitizer
+if (ENABLE_ASAN)
+    set(ASAN_FLAGS "-fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize=null -fno-sanitize=alignment")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ASAN_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ASAN_FLAGS}")
+endif ()
+
+# Debug or Release
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message(STATUS "Debug version...")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_DEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
     add_definitions(-D_DEBUG)
 else ()
     message(STATUS "Release version...")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+endif ()
+
+if (CMAKE_HOST_UNIX)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 endif ()
 
 include_directories(main)
 add_executable(${PROJECT_NAME} main.cpp)
 
 target_link_libraries(${PROJECT_NAME} lwhttp)
+
+add_subdirectory(main)
+
+if (ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif ()

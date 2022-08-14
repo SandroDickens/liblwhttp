@@ -1,6 +1,8 @@
 #include <memory>
 #include <iostream>
 
+#include <gtest/gtest.h>
+
 #include "include/http/lwhttp.h"
 
 void multiRequestTest()
@@ -17,8 +19,9 @@ void multiRequestTest()
 		URL url = URL(var);
 		HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 		HttpResponse response{};
-		client->send(request, response);
-		std::cout << "status: " << response.getStatusCode() << "/" << response.getReason() << std::endl;
+		auto ret = client->send(request, response);
+		EXPECT_GT(ret, 0);
+		EXPECT_EQ(response.getStatusCode(), 200);
 		//std::cout << response.getResponseBody()->getContent();
 	}
 }
@@ -30,7 +33,9 @@ void clientRequestTest_1()
 	URL url("https://www.google.com");
 	HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 	HttpResponse response{};
-	client->send(request, response);
+	auto ret = client->send(request, response);
+	EXPECT_GT(ret, 0);
+	EXPECT_EQ(response.getStatusCode(), 200);
 }
 
 void clientRequestTest_2()
@@ -40,19 +45,18 @@ void clientRequestTest_2()
 	URL url("https://www.youtube.com/");
 	HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 	HttpResponse response{};
-	client->send(request, response);
+	auto ret = client->send(request, response);
+	EXPECT_GT(ret, 0);
+	EXPECT_EQ(response.getStatusCode(), 200);
 }
 
-void multiClientTest()
+TEST(ClientTest, MultiClientTest)
 {
 	clientRequestTest_1();
 	clientRequestTest_2();
 }
 
-int ClientTests()
+TEST(ClientTest, MultiRequestTest)
 {
 	multiRequestTest();
-	multiClientTest();
-
-	return 0;
 }

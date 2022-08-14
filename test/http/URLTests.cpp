@@ -1,10 +1,11 @@
-#include <iostream>
 #include <vector>
+
+#include <gtest/gtest.h>
+
 #include "include/http/URL.h"
 
-int url_test()
+int urlTests()
 {
-	std::cout << "URL test..." << std::endl;
 	std::vector<std::string> URLs{
 			//username:password
 			R"(http://username:password@www.github.com:8080/directory/file?query#ref)",
@@ -32,21 +33,16 @@ int url_test()
 			R"(https://token_abcd_1234@www.github.com/)",
 	};
 
-	size_t passed = 0, failed = 0, total = URLs.size();
 	for (auto &item: URLs)
 	{
 		URL url(item);
-		auto tmp = url.serialize();
-		std::cout << item << ": " << ((item == url.serialize()) ? "pass" : "failed") << std::endl;
-		if (item == url.serialize())
-		{
-			++passed;
-		}
-		else
-		{
-			++failed;
-		}
+		auto serial = url.serialize();
+		EXPECT_EQ(item, url.serialize());
 	}
-	std::cout << "Test summary: " << passed << "/" << total << std::endl;
 	return 0;
+}
+
+TEST(URLTests, serialize)
+{
+	urlTests();
 }

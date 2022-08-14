@@ -1,10 +1,7 @@
-int url_test();
+#include "gtest/gtest.h"
 
-int ClientTests();
-
-int main()
+int main(int argc, char **argv)
 {
-	url_test();
-	ClientTests();
-	return 0;
+	::testing::InitGoogleTest();
+	return RUN_ALL_TESTS();
 }
