@@ -14,11 +14,14 @@ liblwhttp(lightweight http library)是一个简单的HTTP客户端库, 支持HTT
 
 ```shell
 $ git clone https://github.com/YukPingFong/liblwhttp.git
-$ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-$ cd build
+# Debug, 如果开启ENABLE_TESTS, 务必关闭ENABLE_ASAN
+$ cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON -DENABLE_ASAN=OFF
+# Release
+$ cmake -S . -B build-release -DENABLE_TESTS=ON
+$ cd build-debug
 $ make -j12
-$ tree ./build/bin/
-./build/bin/
+$ tree ./build-debug/bin/
+./build-debug/bin/
 ├── demo
 ├── http_test
 └── liblwhttp.so
