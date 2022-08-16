@@ -1,9 +1,7 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.11)
 project(demo)
 
-#if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/main/include)
-#endif ()
 
 option(ENABLE_DEMO "Enable demo" OFF)
 option(ENABLE_TESTS "Enable test" OFF)
