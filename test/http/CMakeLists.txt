@@ -1,8 +1,4 @@
-set(MAIN_SRC_DIR "../../main")
-
 set(TEST_TARGET_NAME "HttpTests")
-
-include_directories(${MAIN_SRC_DIR})
 
 add_test(NAME httpTest COMMAND ${TEST_TARGET_NAME} --exe $<TARGET_FILE:${TEST_TARGET_NAME}>)
 

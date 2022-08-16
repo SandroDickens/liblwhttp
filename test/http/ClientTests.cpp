@@ -1,9 +1,8 @@
 #include <memory>
-#include <iostream>
 
 #include <gtest/gtest.h>
 
-#include "include/http/lwhttp.h"
+#include <http/lwhttp.h>
 
 void multiRequestTest()
 {

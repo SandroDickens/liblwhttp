@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(demo)
 
-option(ENABLE_DEMO "Enable demo" ON)
+#if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+include_directories(${CMAKE_SOURCE_DIR}/main/include)
+#endif ()
+
+option(ENABLE_DEMO "Enable demo" OFF)
 option(ENABLE_TESTS "Enable test" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 

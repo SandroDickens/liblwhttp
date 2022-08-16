@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "include/http/URL.h"
+#include <http/lwhttp.h>
 
 int urlTests()
 {
