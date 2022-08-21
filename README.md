@@ -1,6 +1,6 @@
 # liblwhttp
 
-## 简介
+## 1. 简介
 
 liblwhttp(lightweight http library)是一个简单的HTTP客户端库, 支持HTTP和HTTPS请求, 支持Windows和Linux系统  
 其中TLS依赖于OpenSSL
@@ -10,9 +10,9 @@ liblwhttp(lightweight http library)是一个简单的HTTP客户端库, 支持HTT
 - Linux  
   在Linux系统下, liblwhttp编译得到的是动态库liblwhttp.so
 
-## Wiki
+## 2. Wiki
 [Wiki](../../wiki)
-## 编译
+## 3. 编译
 
 ```shell
 $ git clone https://github.com/YukPingFong/liblwhttp.git
@@ -32,40 +32,47 @@ $ tree ./build-debug/bin/
 $ ./bin/demo
 ```
 
-## 用法
-
-1. 创建URL
-
+## 4. 用法
+### 1. 创建URL
 ```c++
 URL url("https://www.google.com/");
 ```
-
-2. 创建HttpRequest
-
+### 2. 创建HttpRequest
 ```c++
 HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 ```
-
-3. 创建HttpClient
-
+### 3. 创建HttpClient
 ```c++
 std::shared_ptr<HttpClient> httpClient = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent("lwhttp/0.0.1").build();
 ```
-
-4. 发生HTTP请求
-
+### 4. 发生HTTP请求
 ```c++
 HttpResponse response{};
 httpClient->send(request, response);
 ```
+### 5. 完整例子
+#### a. CMake
+CMakeLists.txt:
+```cmake
+add_executable(${TARGET_NAME} main.cpp)
 
-5. 完整例子
+include(FetchContent)
+FetchContent_Declare(
+        lwhttp
+        GIT_REPOSITORY https://github.com/YukPingFong/liblwhttp.git
+        GIT_TAG 554f215ccafcbdee2a3b4703c884e93afa5b14e8
+)
 
+FetchContent_MakeAvailable(lwhttp)
+
+target_link_libraries(${TARGET_NAME} lwhttp)
+```
+#### b. 示例代码
 ```c++
 #include <memory>
 #include <iostream>
 
-#include "http/lwhttp.h"
+#include <http/lwhttp.h>
 
 int main()
 {
@@ -89,26 +96,8 @@ int main()
 	return 0;
 }
 ```
-
 输出:
-
 ```text
-$ tree ./
-./
-├── http
-│   ├── HttpBase.h
-│   ├── HttpClient.h
-│   ├── HttpRequest.h
-│   ├── HttpResponse.h
-│   ├── lwhttp.h
-│   ├── TLSContext.h
-│   └── URL.h
-├── liblwhttp.so
-└── main.cpp
-
-1 directory, 9 files
-$ g++ main.cpp -I. -L. -llwhttp -o demo
-$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
 $ ./demo
 status: 200/OK
 response capability 348, data:
