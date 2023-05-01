@@ -59,7 +59,7 @@ add_executable(${TARGET_NAME} main.cpp)
 include(FetchContent)
 FetchContent_Declare(
         lwhttp
-        GIT_REPOSITORY https://github.com/YukPingFong/liblwhttp.git
+        GIT_REPOSITORY https://github.com/SandroDickens/liblwhttp.git
         GIT_TAG 554f215ccafcbdee2a3b4703c884e93afa5b14e8
 )
 
