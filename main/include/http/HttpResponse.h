@@ -79,6 +79,8 @@ std::string HttpStatusSerialize(HttpStatus status);
 
 HttpStatus HttpStatusDeserialize(const std::string &str);
 
+std::ostream &operator<<(std::ostream &os, const HttpStatus &obj);
+
 /************************* StatusLine ************************/
 class StatusLine : public Serializable
 {

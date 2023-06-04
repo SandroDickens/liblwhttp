@@ -90,6 +90,12 @@ HttpStatus HttpStatusDeserialize(const std::string &str)
 	return status;
 }
 
+std::ostream &operator<<(std::ostream &os, const HttpStatus &obj)
+{
+	os << static_cast<std::underlying_type<HttpStatus>::type>(obj);
+	return os;
+}
+
 /************************* StatusLine ************************/
 std::string StatusLine::getReason() const
 {
