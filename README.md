@@ -45,7 +45,7 @@ HttpRequest request = HttpRequestBuilder::newBuilder().url(url).GET().build();
 ```c++
 std::shared_ptr<HttpClient> httpClient = HttpClientBuilder::newBuilder().redirect(Redirect::NORMAL).userAgent("lwhttp/0.0.1").build();
 ```
-### 4. 发生HTTP请求
+### 4. 发送HTTP请求
 ```c++
 HttpResponse response{};
 httpClient->send(request, response);
